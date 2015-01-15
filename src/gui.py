@@ -1,6 +1,7 @@
 import sys, os, random
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
+from __builtin__ import enumerate
 
 import matplotlib
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
@@ -10,20 +11,20 @@ from matplotlib.figure import Figure
 from core import *
 
 class Worker(QThread):
-    updated = pyqtSignal(list)
+    updated = pyqtSignal(tuple)
     update_status_bar = pyqtSignal(int)
     core = None
 
     def run(self):
         for i in range(self.core.config.trajanje_svijeta):
-            grupiranje = self.core.cycle()
+            grupiranje, centri = self.core.cycle()
             if i % 3 is 0:
-                self.updated.emit(grupiranje)
+                self.updated.emit((grupiranje, centri))
             self.update_status_bar.emit(i)
 
 class AppForm(QMainWindow):
     def __init__(self, parent=None):
-        self.core = Core(Config(Naive()))
+        self.core = Core(Config(Wine()))
         self.colors = []
 
         QMainWindow.__init__(self, parent)
@@ -70,22 +71,37 @@ class AppForm(QMainWindow):
         """
         QMessageBox.about(self, "About the demo", msg.strip())
 
+    def setup_axes(self):
+        self.axes.clear()
+        self.axes.grid(self.grid_cb.isChecked())
+        self.axes.set_xlim(-50, 150)
+        self.axes.set_ylim(-50, 150)
+
+
     def on_draw(self, data):
 
         # clear the axes and redraw the plot anew
-        self.axes.clear()
+        self.setup_axes()
+
         self.axes.grid(self.grid_cb.isChecked())
 
-        for klasa in data:
-            self.axes.plot([t[0] * 100 for t in klasa], [t[1] * 100 for t in klasa], 'o', markersize=12 , color=(self.getColor(data.index(klasa))))
+        for iklasa, klasa in enumerate(data[0]):
+            self.axes.plot([t[0] * 100 for t in klasa],
+                           [t[1] * 100 for t in klasa],
+                           'o',
+                           markersize=10 ,
+                           color=(self.getColor(data[0].index(klasa))))
+            self.axes.plot([data[1][iklasa][0] * 100 ],
+                           [data[1][iklasa][1] * 100 ],
+                           'x',
+                           markersize=12 ,
+                           color=(self.getColor(data[0].index(klasa))))
 
         self.canvas.draw()
 
     def on_draw_initial(self, data):
         # clear the axes and redraw the plot anew
-        self.axes.clear()
-        self.axes.grid(self.grid_cb.isChecked())
-
+        self.setup_axes()
 
         self.axes.plot([t[0] * 100 for t in data], [t[1] * 100 for t in data], 'o', markersize=12 , color=(random.random(), random.random(), random.random()))
 
@@ -111,7 +127,7 @@ class AppForm(QMainWindow):
 
         # Bind the 'pick' event for clicking on one of the bars
         #
-        self.canvas.mpl_connect('pick_event', self.on_pick)
+        # LLL self.canvas.mpl_connect('pick_event', self.on_pick)
 
         # Create the navigation toolbar, tied to the canvas
         #

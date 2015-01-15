@@ -6,7 +6,7 @@ class Dataset(object):
 
     def readFile(self, localfile, classCol=False):
         f = open(localfile, "r")
-        for columns in ( raw.strip().split(',') for raw in f):
+        for columns in [raw.strip().split(',') for raw in f]:
             if classCol:
                 self.data.append([float(col) for col in columns[:-1]])
                 self.classes = columns[-1]

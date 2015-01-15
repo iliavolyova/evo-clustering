@@ -22,23 +22,29 @@ class Config:
         self.dataset = dataset
         self.n_dims = dataset.getColNum()  # dimenzija podataka
         self.k_max = 5   # max klastera
-        self.velicina_populacije = 10
-        self.trajanje_svijeta = 50
-        self.fitness_metoda = 'cs'
+        self.velicina_populacije = 20
+        self.trajanje_svijeta = 1000
+        self.fitness_metoda = 'db'
         self.db_param_q = 2
         self.db_param_t = 2
 
-    def distNd(self, a, b):
+    def distNd(self, a, b, p):
         sum = 0
         for i in range(len(a)):
-            sum += (a[i] - b[i])**2
-        return math.sqrt(sum)
+            sum += (a[i] - b[i])**p
+        return math.pow(sum, 1 / p)
 
-    def dist_db(self, a, b):  # TODO: treba ovisi o necemu, ali nije jasno cemu
-        return np.power(self.distNd(a, b), self.db_param_q)
+    #def dist_db(self, a, b):
+    #    return np.power(self.distNd(a, b, 2), self.db_param_q)
 
     def dist(self, a, b):
-        return self.distNd(a, b)
+        return self.distNd(a, b, 2)
+
+    def dist_db(self, a, b):
+        return self.dist(a, b);
+
+    def dist_cs(self, a, b):
+        return self.dist(a, b);
 
     def crossover_rate(self, t): # t jer se vremenom spusta
         return 0.5 + 0.5 * (self.trajanje_svijeta - t) / self.trajanje_svijeta
@@ -58,8 +64,8 @@ class Core:
 
     def start(self):
         p = Populacija(self.config)
-        plt.xlim(0, 100)
-        plt.ylim(0, 100)
+        plt.xlim(-50, 150)
+        plt.ylim(-50, 150)
 
         for i in range(self.config.trajanje_svijeta):
             p.evoluiraj(i)
@@ -68,11 +74,11 @@ class Core:
             najkrom = np.argmax([kr.fitness() for kr in p.trenutna_generacija])
             grupiranje = p.trenutna_generacija[najkrom].pridruzivanje()
 
-            if i % 6 == 0:
-                plt.clf()
+            if i % 1 == 0:
+                #plt.clf()
                 for klasa in grupiranje:
                     plt.plot([t[0] * 100 for t in klasa], [t[1] * 100 for t in klasa], 'o', markersize=12 , color=(random.random(), random.random(), random.random()))
-                plt.show()
+                #plt.show()
 
     def cycle(self):
         if self.cycles < self.config.trajanje_svijeta:
@@ -85,7 +91,7 @@ class Core:
 
             self.staro = grupiranje
             self.cycles +=1
-            return grupiranje
+            return grupiranje, self.p.trenutna_generacija[najkrom].aktivni_centri()
 
 class Kromosom:
     geni = []
@@ -112,10 +118,18 @@ class Kromosom:
             if aktivnih < 2:
                 for ispravak in random.sample(range(config.k_max), 2):
                     self.geni[ispravak] = 0.5 + 0.5 * random.random()
+                aktivnih = self.aktivnih_centara()
 
             particija = self.pridruzivanje()
             particija_neprazno = [p for p in particija if p != []]
-            provjereno_ispravno = all([len(grupa) >= 2 for grupa in particija])
+
+            ispravnih = sum([len(grupa) >= 2 for grupa in particija])
+            if ispravnih >= 2:
+                # gasimo neispravne, dovoljno je ispravnih
+                particija = [grupa for grupa in particija if len(grupa) >= 2]
+                provjereno_ispravno = True
+            else:
+                provjereno_ispravno = False
             if not provjereno_ispravno:
                 tocaka = self.config.dataset.getRowNum()
                 po_grupi = tocaka // aktivnih
@@ -194,17 +208,17 @@ class Kromosom:
         centri = [np.average(grupa, axis=0) for grupa in particija]
 
         #rasprsenja
-        S = [math.pow(sum([self.config.dist_db(t, centri[igrupa]) for t in grupa]) / len(grupa),
+        S = [math.pow(sum([self.config.dist_db(t, centri[igrupa]) ** self.config.db_param_q for t in grupa]) / len(grupa),
                       1 / self.config.db_param_q)
              for igrupa, grupa in enumerate(particija)]
 
-        return sum(
+        return K / sum(
             [max(
                 [(S[igrupa] + S[igrupa2]) /
-                 spatial.distance.minkowski(centri[igrupa], centri[igrupa2], self.config.db_param_t)
+                 self.config.distNd(centri[igrupa], centri[igrupa2], self.config.db_param_t)
                  for igrupa2, grupa2 in enumerate(particija) if igrupa != igrupa2])
              for igrupa, grupa in enumerate(particija)]
-        ) / K
+        )
 
 
 
@@ -214,12 +228,12 @@ class Kromosom:
 
         K = len(particija)
         duljine = [len(p) for p in particija]
-        a = sum([sum([max([self.config.dist(particija[i][x1], particija[i][x2])
+        a = sum([sum([max([self.config.dist_cs(particija[i][x1], particija[i][x2])
                           for x2 in range(len(particija[i]))])
                      for x1 in range(len(particija[i]))]) / duljine[i]
                  for i in range(len(particija)) if duljine[i] > 0])
 
-        b = sum([min([self.config.dist(particija[i][x1], particija[i][x2])
+        b = sum([min([self.config.dist_cs(particija[i][x1], particija[i][x2])
                       for x1 in range(len(particija[i]))
                       for x2 in range(len(particija[i]))
                       if x1 != x2])
@@ -255,11 +269,11 @@ class Populacija:
 
     def evoluiraj(self, t):
         iduca_generacija = []
-        for kromy in range(self.config.velicina_populacije):
-            dobrost = self.trenutna_generacija[kromy].fitness()
-            probni_vek = self.probni_vektor(kromy, t)
+        for kr in range(self.config.velicina_populacije):
+            dobrost = self.trenutna_generacija[kr].fitness()
+            probni_vek = self.probni_vektor(kr, t)
             dobrost_alt = probni_vek.fitness()
-            iduca_generacija.append(self.trenutna_generacija[kromy] if dobrost > dobrost_alt else probni_vek)
+            iduca_generacija.append(self.trenutna_generacija[kr] if dobrost > dobrost_alt else probni_vek)
 
         self.trenutna_generacija = iduca_generacija
 
