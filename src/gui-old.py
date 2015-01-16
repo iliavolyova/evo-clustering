@@ -1,11 +1,11 @@
 import sys, os, random
-
-from PyQt4 import QtCore, QtGui
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from __builtin__ import enumerate
 
+import matplotlib
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 from mpl_toolkits.mplot3d import Axes3D
 
@@ -23,18 +23,22 @@ class Worker(QThread):
                 self.update_data.emit((grupiranje, centri))
             self.update_gencount.emit(i)
 
-class MainWindow(QMainWindow):
+class AppForm(QMainWindow):
     def __init__(self, parent=None):
-        super(QMainWindow, self).__init__(parent)
+        QMainWindow.__init__(self, parent)
+        self.setWindowTitle('Evolucijski clustering')
         self._thread = Worker(self)
 
         self.setupMatplotlibWidget()
-        self.setupUi(self.canvas)
-        self._thread.update_gencount.connect(self.updateGenLabel)
+        self._thread.update_gencount.connect(self.update_status_bar)
         self._thread.update_data.connect(self.on_draw)
-        self.setupActions()
+
+        self.create_menu()
+        self.create_main_frame()
+        self.create_status_bar()
 
         self.selectDataset('Iris')
+        self.on_draw_initial(self.core.config.dataset.data)
 
     def selectDataset(self, dataset):
         ds = self.getNewConfig(dataset)
@@ -42,7 +46,7 @@ class MainWindow(QMainWindow):
         self.dimensions = self.core.config.n_dims
         self.colors = []
         self._thread.core = self.core
-        self.dimensionLabel.setText(str(self.core.config.dataset.getColNum()) + 'x' + str(self.core.config.dataset.getRowNum()))
+        #self.dimensionLabel.setText(str(self.core.config.dataset.getColNum()) + 'x' + str(self.core.config.dataset.getRowNum()))
         self.on_draw_initial(self.core.config.dataset.data)
 
     def getNewConfig(self, dataset):
@@ -69,6 +73,7 @@ class MainWindow(QMainWindow):
             self.canvas.print_figure(path, dpi=self.dpi)
             self.statusBar().showMessage('Saved to %s' % path, 2000)
 
+
     def setup_axes(self):
         if (self.dimensions == 2):
             self.axes.clear()
@@ -79,6 +84,7 @@ class MainWindow(QMainWindow):
             self.axes.set_zlim3d([-50, 150])
             self.axes.set_ylim3d([-50, 150])
             self.axes.set_xlim3d([-50, 150])
+
 
     def on_draw(self, data):
 
@@ -112,7 +118,7 @@ class MainWindow(QMainWindow):
                        [t[2] * 100 for t in data if self.dimensions > 2],
                        'o', markersize=5 ,
                        color=(self.getColor(data[0].index(data[0][0]))))
-        self.generationLabel.setText('0/' + str(self.core.config.trajanje_svijeta))
+#        self.generationLabel.setText('0/' + str(self.core.config.trajanje_svijeta))
         self.canvas.draw()
 
     def setupMatplotlibWidget(self):
@@ -120,8 +126,59 @@ class MainWindow(QMainWindow):
         self.fig = Figure((10.0, 10.0), dpi=self.dpi)
         self.canvas = FigureCanvas(self.fig)
         self.canvas.setParent(self)
+
+    def create_main_frame(self):
+        self.main_frame = QWidget()
+
+        self.dpi = 120
+        self.fig = Figure((12.0, 12.0), dpi=self.dpi)
+        self.canvas = FigureCanvas(self.fig)
+        self.canvas.setParent(self.main_frame)
+
+
         self.axes = self.fig.add_subplot(111)
-        #self.mpl_toolbar = NavigationToolbar(self.canvas, self.main_frame)
+
+        self.mpl_toolbar = NavigationToolbar(self.canvas, self.main_frame)
+
+        self.draw_button = QPushButton("&Start")
+        self.connect(self.draw_button, SIGNAL('clicked()'), self._thread.start)
+
+
+        hbox = QHBoxLayout()
+
+        for w in [  self.draw_button, ]:
+            hbox.addWidget(w)
+            hbox.setAlignment(w, Qt.AlignVCenter)
+
+        vbox = QVBoxLayout()
+        vbox.addWidget(self.canvas)
+        vbox.addWidget(self.mpl_toolbar)
+        vbox.addLayout(hbox)
+
+        self.main_frame.setLayout(vbox)
+        self.setCentralWidget(self.main_frame)
+
+    def create_status_bar(self):
+        self.status_text = QLabel("Generacija 0")
+        self.statusBar().addWidget(self.status_text, 1)
+
+    def update_status_bar(self, i):
+        self.status_text.setText('Generacija ' + str(i))
+
+    def create_menu(self):
+        self.file_menu = self.menuBar().addMenu("&File")
+
+        load_file_action = self.create_action("&Save plot",
+            shortcut="Ctrl+S", slot=self.save_plot,
+            tip="Save the plot")
+        quit_action = self.create_action("&Quit", slot=self.close,
+            shortcut="Ctrl+Q", tip="Close the application")
+
+        self.add_actions(self.file_menu,
+            (load_file_action, None, quit_action))
+
+        self.help_menu = self.menuBar().addMenu("&Help")
+
 
     def add_actions(self, target, actions):
         for action in actions:
@@ -147,70 +204,10 @@ class MainWindow(QMainWindow):
             action.setCheckable(True)
         return action
 
-    def updateGenLabel(self, i):
-        self.generationLabel.setText(str(i) + '/' + str(self.core.config.trajanje_svijeta))
-
-    def setupUi(self, canvas):
-        self.setObjectName("Evo-clustering")
-        self.resize(600, 650)
-        self.centralwidget = QtGui.QWidget()
-
-        hbox = QtGui.QHBoxLayout()
-        self.comboBox = QtGui.QComboBox(self.centralwidget)
-        for i in ['Iris', 'Wine', 'Glass', 'Breast cancer']:
-            self.comboBox.addItem(i)
-        self.label = QtGui.QLabel("Dataset")
-        hbox.addWidget(self.label)
-        hbox.addWidget(self.comboBox)
-
-        hbox2 = QtGui.QHBoxLayout()
-        self.label_2 = QtGui.QLabel("Dataset dimensions")
-        self.dimensionLabel = QtGui.QLabel("None loaded")
-        hbox2.addWidget(self.label_2)
-        hbox2.addWidget(self.dimensionLabel)
-
-        vbox = QtGui.QVBoxLayout()
-        vbox.addLayout(hbox)
-        vbox.addLayout(hbox2)
-
-        vbox1= QtGui.QVBoxLayout()
-        self.startButton = QtGui.QPushButton("Start")
-
-        hbox3 = QtGui.QHBoxLayout()
-        hbox4 = QtGui.QHBoxLayout()
-        self.label_3 = QtGui.QLabel("Current generation")
-        self.label_4 = QtGui.QLabel("Number of clusters")
-        self.generationLabel = QtGui.QLabel('0')
-        self.clusterNumLabel = QtGui.QLabel('0')
-        hbox3.addWidget(self.label_3)
-        hbox3.addWidget(self.generationLabel)
-        hbox4.addWidget(self.label_4)
-        hbox4.addWidget(self.clusterNumLabel)
-
-        vbox1.addWidget(self.startButton)
-        vbox1.addLayout(hbox3)
-        vbox1.addLayout(hbox4)
-
-        hbox_master = QtGui.QHBoxLayout()
-        hbox_master.addLayout(vbox)
-        hbox_master.addLayout(vbox1)
-
-        vbox_master = QtGui.QVBoxLayout()
-        vbox_master.addWidget(canvas)
-        vbox_master.addLayout(hbox_master)
-        self.centralwidget.setLayout(vbox_master)
-
-        self.setCentralWidget(self.centralwidget)
-
-
-    def setupActions(self):
-        QtCore.QObject.connect(self.comboBox, QtCore.SIGNAL("currentIndexChanged(QString)"), self.selectDataset)
-        QtCore.QObject.connect(self.startButton, QtCore.SIGNAL("clicked()"), self._thread.run)
-
 
 def main():
     app = QApplication(sys.argv)
-    form = MainWindow(parent=None)
+    form = AppForm()
     form.show()
     app.exec_()
 
