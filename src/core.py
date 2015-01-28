@@ -1,12 +1,3 @@
-'''
-nepreciznosti u clanku:
-  - dist metrika i za db i za cs
-  - koji je tocno postupak za kromosome kod kojih postoji aktivni centar s manje od dvije pridruzene tocke
-       7. str pod D - jedini siguran nacin koji vidim na koji se to moze rijesiti zahtjeva rjesavanje
-       cijelog clustering problema
-       osim u interpretaciji da jedna tocka moze pripadati vise clustera, sto nadam se nije trazeno
-  - kad govore o centrima, misle li na ~artim sredine grupe u particiji ili koordinate u genima
-'''
 from __future__ import division
  
 import numpy as np
@@ -18,12 +9,12 @@ from scipy import spatial
 from reader import *
 
 class Config:
-    def __init__(self, dataset):
-        self.dataset = dataset
-        self.n_dims = dataset.getColNum()  # dimenzija podataka
+    def __init__(self, params):
+        self.dataset = self.create_dataset(params['Dataset'])
+        self.n_dims = self.dataset.getColNum()  # dimenzija podataka
         self.k_max = 5   # max klastera
         self.velicina_populacije = 20
-        self.trajanje_svijeta = 1000
+        self.trajanje_svijeta = params['Number of generations']
         self.fitness_metoda = 'db'
         self.db_param_q = 2
         self.db_param_t = 2
@@ -51,6 +42,12 @@ class Config:
 
     def scale_factor(self):
         return 0.5 + random.random() *0.5
+
+    def create_dataset(self, dataset):
+        if dataset == 'Iris': return Iris()
+        elif dataset == 'Glass' : return Glass()
+        elif dataset == 'Wine' : return Wine()
+        elif dataset == 'Breast cancer' : return Cancer()
 
 class Core:
     def __init__(self, config):
@@ -86,12 +83,13 @@ class Core:
 
             najkrom = np.argmax([kr.fitness() for kr in self.p.trenutna_generacija])
             grupiranje = self.p.trenutna_generacija[najkrom].pridruzivanje()
+            colormap = self.p.trenutna_generacija[najkrom].grupiranje()
             if not np.array_equal(self.staro, grupiranje):
                 print('promjena')
 
             self.staro = grupiranje
             self.cycles +=1
-            return grupiranje, self.p.trenutna_generacija[najkrom].aktivni_centri()
+            return colormap
 
 class Kromosom:
     geni = []
@@ -146,36 +144,6 @@ class Kromosom:
                         self.geni[config.k_max + config.n_dims * grupa:
                                   config.k_max + config.n_dims * (1 + grupa)] = centar
 
-            '''
-           particija = self.pridruzivanje()
-           particija_neprazno = [p for p in particija if p != []]
-           svi_ok = all([len(grupa) >= 2 for grupa in particija])
-           if not svi_ok:
-               #privremeno - randomizirati problematicne
-               for igrupa, grupa in enumerate(particija_neprazno):
-                   if self.geni[igrupa] > 0.5 and len(grupa) < 2:
-                       self.geni[k_max + n_dims * igrupa:k_max + n_dims * (igrupa+1)] = [rand() for x in range(n_dims)]
-           else:
-               break
-
-           # jos jedno privremeno rjesenje - ugasiti sve problematicne
-           # problem s njim - moze uzrokovat da imamo manje od 2 aktinve grupe
-           #
-           #for igrupa, grupa in enumerate(particija):
-           #    if len(grupa) < 2:
-           #        self.geni[igrupa] *= -1
-
-           pocetak impl. njihove ideje koja mi se cini besmislenom
-
-           If so, the cluster center positions
-           of this special chromosome are reinitialized by an average
-           computation. We put n/K data points for every individual
-           cluster center, such that a data point goes with a center that is
-           nearest to it
-
-
-           '''
-
         if len(self.geni) != config.k_max + config.k_max * config.n_dims:
             print("probl")
 
@@ -187,14 +155,19 @@ class Kromosom:
         return len(self.aktivni_centri())
 
     def pridruzivanje(self):
-        p = []
         centri = self.aktivni_centri()
         p = [[] for c in centri]
         for t in self.config.dataset.data:
             najbl = np.argmin([self.config.dist(c, t) for c in centri])
             p[najbl].append(t)
-        #return [x for x in p if x != []]
         return p
+
+    def grupiranje(self):
+        colormap = np.zeros(len(self.config.dataset.data), dtype=int)
+        for t in self.config.dataset.data:
+            najbl = np.argmin([self.config.dist(c, t) for c in self.aktivni_centri()])
+            colormap[self.config.dataset.data.index(t)] = najbl
+        return colormap
 
     def fitness_db(self, particija=[]):
         if not particija:
@@ -219,8 +192,6 @@ class Kromosom:
                  for igrupa2, grupa2 in enumerate(particija) if igrupa != igrupa2])
              for igrupa, grupa in enumerate(particija)]
         )
-
-
 
     def fitness_cs(self, particija=[]):
         if not particija:
@@ -249,10 +220,10 @@ class Kromosom:
 
 
 class Populacija:
-    trenutna_generacija = []
 
     def __init__(self, config):
         self.config = config
+        self.trenutna_generacija = []
         for t in range(config.velicina_populacije):
             self.trenutna_generacija.append(Kromosom(config))
 
