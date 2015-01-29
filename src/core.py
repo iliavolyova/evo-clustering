@@ -32,10 +32,10 @@ class Config:
         return self.distNd(a, b, 2)
 
     def dist_db(self, a, b):
-        return self.dist(a, b);
+        return self.dist(a, b)
 
     def dist_cs(self, a, b):
-        return self.dist(a, b);
+        return self.dist(a, b)
 
     def crossover_rate(self, t): # t jer se vremenom spusta
         return 0.5 + 0.5 * (self.trajanje_svijeta - t) / self.trajanje_svijeta
@@ -78,18 +78,26 @@ class Core:
                 #plt.show()
 
     def cycle(self):
-        if self.cycles < self.config.trajanje_svijeta:
-            self.p.evoluiraj(self.cycles)
+       if self.cycles < self.config.trajanje_svijeta:
+           self.p.evoluiraj(self.cycles)
 
-            najkrom = np.argmax([kr.fitness() for kr in self.p.trenutna_generacija])
-            grupiranje = self.p.trenutna_generacija[najkrom].pridruzivanje()
-            colormap = self.p.trenutna_generacija[najkrom].grupiranje()
-            if not np.array_equal(self.staro, grupiranje):
-                print('promjena')
+           fitnessi = np.array([kr.fitness() for kr in self.p.trenutna_generacija])
+           najkrom = np.argmax(fitnessi)
+           grupiranje = self.p.trenutna_generacija[najkrom].pridruzivanje()
+           colormap = self.p.trenutna_generacija[najkrom].grupiranje()
+           if not np.array_equal(self.staro, grupiranje):
+               print('promjena')
 
-            self.staro = grupiranje
-            self.cycles +=1
-            return colormap
+           self.staro = grupiranje
+           self.cycles +=1
+
+           return CycleResult(colormap, fitnessi)
+
+class CycleResult():
+
+   def __init__(self, colormap, fitnessmap):
+       self.colormap = colormap
+       self.fitnessmap = fitnessmap
 
 class Kromosom:
     geni = []
