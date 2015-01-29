@@ -7,7 +7,6 @@ from PyQt4.QtGui import *
 class ScatterPlot():
 
     def __init__(self, data):
-
         self.data = data
         self.w = MyGLView()
         self.w.opts['distance'] = 35
@@ -87,6 +86,8 @@ class ScatterPlot():
 
 
 class MyGLView(gl.GLViewWidget):
+    die = pyqtSignal()
+
     def __init__(self):
         super(MyGLView, self).__init__()
         self.centerOnScreen()
@@ -127,3 +128,7 @@ class MyGLView(gl.GLViewWidget):
         resolution = QDesktopWidget().screenGeometry()
         self.move((resolution.width() / 2) - (self.frameSize().width() / 2),
                   (resolution.height() / 2) - (self.frameSize().height() / 2))
+
+    def closeEvent(self, QCloseEvent):
+        self.die.emit()
+        QCloseEvent.accept()

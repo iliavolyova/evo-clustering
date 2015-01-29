@@ -3,16 +3,32 @@ from __future__ import division
 class Dataset(object):
     def __init__(self):
         self.data = []
+        self.params = {}
 
     def readFile(self, localfile, classCol=False):
         f = open(localfile, "r")
+        self.params['Clusters'] = {}
+        classList = []
         for columns in [raw.strip().split(',') for raw in f]:
             if classCol:
                 self.data.append([float(col) for col in columns[:-1]])
-                self.classes = columns[-1]
+                currClass = columns[-1]
+                if currClass in self.params['Clusters'].keys():
+                    self.params['Clusters'][currClass] += 1
+                else:
+                    self.params['Clusters'][currClass] = 1
+                classList.append(currClass)
             else:
                 self.data.append([float(col) for col in columns])
-                self.classes = None
+        if len(classList) > 0:
+            if isinstance(classList[0], str):
+                self.params['ClusterMap'] = self.toIntList(classList)
+            else:
+                self.params['ClusterMap'] = classList
+
+        self.params['Size'] = len(self.data)
+        self.params['Features'] = len(self.data[0])
+        self.params['Classes'] = len(self.params['Clusters'].keys()) if 'Clusters' in self.params else None
         self.normalize()
 
     def readArray(self, arr):
@@ -31,6 +47,20 @@ class Dataset(object):
 
     def getRowNum(self):
         return len(self.data)
+
+    def toIntList(self, classes):
+        class_map = {}
+        class_list = []
+        i = 0
+        for c in classes:
+            if c in class_map:
+                class_list.append(class_map[c])
+            else:
+                i = i + 1
+                class_map[c] = i
+                class_list.append(i)
+        return class_list
+
 
 class Iris(Dataset):
 

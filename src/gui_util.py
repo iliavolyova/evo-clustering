@@ -1,7 +1,9 @@
 from PyQt4 import QtCore, QtGui
 import re
 import numpy as np
+import pyqtgraph.parametertree as paramtree
 
+from core import Config
 
 class AxesTable():
     def __init__(self, main_window, table_axes):
@@ -55,3 +57,55 @@ class HistoPlot():
     def update(self, vals):
         y,x = np.histogram(vals, bins=range(5))
         self.plot.setData(x=x, y=y)
+
+class ParamTree():
+    def __init__(self):
+        self.activeParams = {
+            'Dataset' : 'Iris',
+            'Number of generations' : 100,
+            'Population size': 20,
+            'Max clusters' : 5,
+            'Fitness method': 'db',
+            'q' : 2,
+            't' : 2,
+        }
+        self.datasetParams = {
+            'Size' : 150,
+            'Features': 4,
+            'Classes': 3,
+            'Iris-setosa' : 50,
+            'Iris-versicolor': 50,
+            'Iris-virginica': 50
+        }
+        self.params = [
+            {'name': 'Algorithm properties', 'type': 'group', 'children': [
+                {'name': 'Dataset', 'type': 'list', 'values': {"Iris": "Iris", "Wine": "Wine", "Glass": "Glass"}, 'value': self.activeParams['Dataset']},
+                {'name': 'Number of generations', 'type': 'int', 'value': self.activeParams['Number of generations']},
+                {'name': 'Max clusters', 'type': 'int', 'value': self.activeParams['Max clusters']},
+                {'name': 'Population size', 'type': 'int', 'value': self.activeParams['Population size']},
+                {'name': 'Fitness method', 'type': 'list', 'values': {"db": "db", "cs": "cs"}, 'value': self.activeParams['Fitness method']},
+                {'name': 'q', 'type': 'int', 'value': self.activeParams['q']},
+                {'name': 't', 'type': 'int', 'value': self.activeParams['t']}]
+            },
+            {'name': 'Dataset stats', 'type': 'group', 'children': [
+                {'name': 'Size', 'type': 'int', 'value': self.datasetParams['Size'], 'readonly': True},
+                {'name': 'Features', 'type': 'int', 'value': self.datasetParams['Features'], 'readonly': True},
+                {'name': 'Classes', 'type': 'int', 'value': self.datasetParams['Classes'], 'readonly': True},
+                {'name': 'Class clusters', 'type': 'group', 'children': [
+                    {'name': 'Iris-setosa', 'type': 'int', 'value': self.datasetParams['Iris-setosa'], 'readonly': True},
+                    {'name': 'Iris-versicolor', 'type': 'int', 'value': self.datasetParams['Iris-versicolor'], 'readonly': True},
+                    {'name': 'Iris-virginica', 'type': 'int', 'value': self.datasetParams['Iris-virginica'], 'readonly': True},
+                ]}]
+            }]
+
+        self.tree = paramtree.Parameter.create(name='', type='group', children=self.params)
+
+    def addClusters(self, clusters):
+        clustersGroup = self.tree.child('Dataset stats').child('Class clusters')
+        clustersGroup.clearChildren()
+        children = []
+
+        for k, v in clusters.iteritems():
+            children.append({'name': k, 'value': v, 'type': 'int', 'readonly': True})
+
+        clustersGroup.addChildren(children)

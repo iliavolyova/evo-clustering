@@ -6,7 +6,7 @@ import math
 import matplotlib.pyplot as plt
 from scipy import spatial
 
-from reader import *
+from dataset import *
 
 class Config:
     def __init__(self, params):
@@ -85,8 +85,6 @@ class Core:
            najkrom = np.argmax(fitnessi)
            grupiranje = self.p.trenutna_generacija[najkrom].pridruzivanje()
            colormap = self.p.trenutna_generacija[najkrom].grupiranje()
-           if not np.array_equal(self.staro, grupiranje):
-               print('promjena')
 
            self.staro = grupiranje
            self.cycles +=1
@@ -94,7 +92,6 @@ class Core:
            return CycleResult(colormap, fitnessi)
 
 class CycleResult():
-
    def __init__(self, colormap, fitnessmap):
        self.colormap = colormap
        self.fitnessmap = fitnessmap

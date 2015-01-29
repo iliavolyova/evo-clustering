@@ -1,7 +1,7 @@
 import sys
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-import pyqtgraph.parametertree as paramtree
+
 
 import gui_scatter
 from core import *
@@ -19,7 +19,7 @@ class Worker(QtCore.QObject):
         for i in range(self.core.config.trajanje_svijeta):
             result = self.core.cycle()
             self.update_data.emit(result.colormap)
-            self.update_fitness.emit(result.fitnessmap)
+            #self.update_fitness.emit(result.fitnessmap)
             self.update_gencount.emit(i)
         self.finished.emit()
 
@@ -30,13 +30,14 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        p = self.initParams()
-        self.ui.graphicsView.setParameters(p, showTop=False)
-        p.sigTreeStateChanged.connect(self.change_params)
+        self.parameters = ParamTree()
+        self.ui.graphicsView.setParameters(self.parameters.tree, showTop=False)
+        self.parameters.tree.sigTreeStateChanged.connect(self.change_params)
 
-        self.config = Config(self.activeParams)
+        self.config = Config(self.parameters.activeParams)
 
         self.plot = gui_scatter.ScatterPlot(self.config.dataset.data)
+        self.plot.w.die.connect(self.untick_show_plot)
 
         self.axestable = AxesTable(self, self.ui.table_axes)
         self.histogram = HistoPlot(self.ui.histogram_widget)
@@ -52,9 +53,18 @@ class MainWindow(QMainWindow):
 
     def change_params(self, param, changes):
         for param, change, data in changes:
-            self.activeParams[param.name()] = data
-        self.config = Config(self.activeParams)
-        self.plot.setData(self.config.dataset.data)
+            if param.name() in self.parameters.activeParams:
+                self.parameters.activeParams[param.name()] = data
+        if param.opts['name'] == 'Dataset':
+            self.config = Config(self.parameters.activeParams)
+            self.plot.setData(self.config.dataset.data)
+            for key, value in self.config.dataset.params.iteritems():
+                children = self.parameters.tree.child('Dataset stats').children()
+                for c in children:
+                    if c.name() == key:
+                        c.setValue(value)
+                if key == 'Clusters':
+                    self.parameters.addClusters(value)
 
     def start(self):
         self.thread = QtCore.QThread()
@@ -69,32 +79,12 @@ class MainWindow(QMainWindow):
         self.thread.started.connect(self.worker.work)
         self.thread.start()
 
-    def initParams(self):
-        self.activeParams = {
-            'Dataset' : 'Iris',
-            'Number of generations' : 100,
-            'Population size': 20,
-            'Max clusters' : 5,
-            'Fitness method': 'db',
-            'q' : 2,
-            't' : 2,
-        }
-        params = [
-            {'name': 'Algorithm properties', 'type': 'group', 'children': [
-                {'name': 'Dataset', 'type': 'list', 'values': {"Iris": "Iris", "Wine": "Wine", "Glass": "Glass"}, 'value': self.activeParams['Dataset']},
-                {'name': 'Number of generations', 'type': 'int', 'value': self.activeParams['Number of generations']},
-                {'name': 'Max clusters', 'type': 'int', 'value': self.activeParams['Max clusters']},
-                {'name': 'Population size', 'type': 'int', 'value': self.activeParams['Population size']},
-                {'name': 'Fitness method', 'type': 'list', 'values': {"db": "db", "cs": "cs"}, 'value': self.activeParams['Fitness method']},
-                {'name': 'q', 'type': 'int', 'value': self.activeParams['q']},
-                {'name': 't', 'type': 'int', 'value': self.activeParams['t']}]
-            },
-            {'name': 'Dataset stats', 'type': 'group', 'children': [
-                {'name': 'Size', 'type': 'int', 'value': 150, 'readonly': True},
-                {'name': 'Features', 'type': 'int', 'value': 4, 'readonly': True}]
-            }]
+    def closeEvent(self, QCloseEvent):
+        self.show_plot(False)
+        QCloseEvent.accept()
 
-        return paramtree.Parameter.create(name='', type='group', children=params)
+    def untick_show_plot(self):
+        self.ui.checkBox_plotShowing.setCheckState(Qt.Unchecked)
 
 def main():
     app = QApplication(sys.argv)
