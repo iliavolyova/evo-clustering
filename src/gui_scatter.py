@@ -1,11 +1,13 @@
 import pyqtgraph.opengl as gl
 import numpy as np
 from PyQt4.QtCore import *
+from PyQt4.QtGui import *
 
 
 class ScatterPlot():
 
     def __init__(self, data):
+
         self.data = data
         self.w = MyGLView()
         self.w.opts['distance'] = 35
@@ -83,9 +85,11 @@ class ScatterPlot():
             i >>= 1
         return s
 
+
 class MyGLView(gl.GLViewWidget):
     def __init__(self):
         super(MyGLView, self).__init__()
+        self.centerOnScreen()
         self.views = {}
         self.dataItems = {}
         self.generations = 0
@@ -118,3 +122,8 @@ class MyGLView(gl.GLViewWidget):
             vi = v.split(" ")
             self.renderText(int(vi[0])*5, int(vi[1])*5, int(vi[2]) * 11, str(self.views[v]))
         self.renderText(0, 0, 13, "Generation: " + str(self.generations))
+
+    def centerOnScreen (self):
+        resolution = QDesktopWidget().screenGeometry()
+        self.move((resolution.width() / 2) - (self.frameSize().width() / 2),
+                  (resolution.height() / 2) - (self.frameSize().height() / 2))

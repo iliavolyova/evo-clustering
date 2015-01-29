@@ -28,14 +28,14 @@ class MainWindow(QMainWindow):
         self.ui.setupUi(self)
 
         p = self.initParams()
-        self.ui.graphicsView.setParameters(p)
+        self.ui.graphicsView.setParameters(p, showTop=False)
         p.sigTreeStateChanged.connect(self.change_params)
 
-        self.core = Core(Config(self.activeParams))
+        self.config = Config(self.activeParams)
 
-        self.plot = gui_scatter.ScatterPlot(self.core.config.dataset.data)
+        self.plot = gui_scatter.ScatterPlot(self.config.dataset.data)
+
         self.axestable = AxesTable(self, self.ui.table_axes)
-
         self.histogram = HistoPlot(self.ui.histogram_widget)
 
         self.ui.button_start.clicked.connect(self.start)
@@ -47,13 +47,13 @@ class MainWindow(QMainWindow):
     def change_params(self, param, changes):
         for param, change, data in changes:
             self.activeParams[param.name()] = data
-        self.core = Core(Config(self.activeParams))
-        self.plot.setData(self.core.config.dataset.data)
+        self.config = Config(self.activeParams)
+        self.plot.setData(self.config.dataset.data)
 
     def start(self):
         self.thread = QtCore.QThread()
         self.worker = Worker()
-        self.worker.core = self.core
+        self.worker.core = Core(self.config)
         self.worker.update_gencount.connect(self.plot.w.setGenerationCount)
         self.worker.update_data.connect(self.plot.w.groupItems)
         self.worker.update_data.connect(self.histogram.update)
@@ -65,11 +65,28 @@ class MainWindow(QMainWindow):
     def initParams(self):
         self.activeParams = {
             'Dataset' : 'Iris',
-            'Number of generations' : 100
+            'Number of generations' : 100,
+            'Population size': 20,
+            'Max clusters' : 5,
+            'Fitness method': 'db',
+            'q' : 2,
+            't' : 2
         }
-        params = [ {'name': 'General', 'type': 'group', 'children': [
-            {'name': 'Dataset', 'type': 'list', 'values': {"Iris": "Iris", "Wine": "Wine", "Glass": "Glass"}, 'value': self.activeParams['Dataset']},
-            {'name': 'Number of generations', 'type': 'int', 'value': self.activeParams['Number of generations']}]}]
+        params = [
+            {'name': 'Algorithm properties', 'type': 'group', 'children': [
+                {'name': 'Dataset', 'type': 'list', 'values': {"Iris": "Iris", "Wine": "Wine", "Glass": "Glass"}, 'value': self.activeParams['Dataset']},
+                {'name': 'Number of generations', 'type': 'int', 'value': self.activeParams['Number of generations']},
+                {'name': 'Max clusters', 'type': 'int', 'value': self.activeParams['Max clusters']},
+                {'name': 'Population size', 'type': 'int', 'value': self.activeParams['Population size']},
+                {'name': 'Fitness method', 'type': 'list', 'values': {"db": "db", "cs": "cs"}, 'value': self.activeParams['Fitness method']},
+                {'name': 'q', 'type': 'int', 'value': self.activeParams['q']},
+                {'name': 't', 'type': 'int', 'value': self.activeParams['t']}]
+            },
+            {'name': 'Dataset stats', 'type': 'group', 'children': [
+                {'name': 'Size', 'type': 'int', 'value': 150, 'readonly': True},
+                {'name': 'Features', 'type': 'int', 'value': 4, 'readonly': True}]
+            }]
+
         return paramtree.Parameter.create(name='', type='group', children=params)
 
 def main():

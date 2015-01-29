@@ -50,7 +50,7 @@ class HistoPlot():
     def __init__(self, plot_widget):
         self.widget = plot_widget
         y,x = np.histogram([], bins=range(5))
-        self.plot = self.widget.plot(x, y, stepMode=True, fillLevel=0, brush=(0,0,255,150))
+        self.plot = self.widget.plot(x=x, y=y, stepMode=True, fillLevel=0, brush=(0,0,255,150))
 
     def update(self, vals):
         y,x = np.histogram(vals, bins=range(5))

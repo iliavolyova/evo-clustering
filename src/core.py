@@ -12,12 +12,12 @@ class Config:
     def __init__(self, params):
         self.dataset = self.create_dataset(params['Dataset'])
         self.n_dims = self.dataset.getColNum()  # dimenzija podataka
-        self.k_max = 5   # max klastera
-        self.velicina_populacije = 20
+        self.k_max = params['Max clusters']
+        self.velicina_populacije = params['Population size']
         self.trajanje_svijeta = params['Number of generations']
-        self.fitness_metoda = 'db'
-        self.db_param_q = 2
-        self.db_param_t = 2
+        self.fitness_metoda = params['Fitness method']
+        self.db_param_q = params['q']
+        self.db_param_t = params['t']
 
     def distNd(self, a, b, p):
         sum = 0
