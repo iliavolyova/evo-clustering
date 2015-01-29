@@ -78,16 +78,18 @@ class MainWindow(QMainWindow):
             'Fitness method': 'db',
             'q' : 2,
             't' : 2,
+            'Distance measure': 'Mahalanobis'
         }
         params = [
             {'name': 'Algorithm properties', 'type': 'group', 'children': [
-                {'name': 'Dataset', 'type': 'list', 'values': {"Iris": "Iris", "Wine": "Wine", "Glass": "Glass"}, 'value': self.activeParams['Dataset']},
+                {'name': 'Dataset', 'type': 'list', 'values': {"Iris": "Iris", "Wine": "Wine", "Glass": "Glass", "Naive": "Naive"}, 'value': self.activeParams['Dataset']},
                 {'name': 'Number of generations', 'type': 'int', 'value': self.activeParams['Number of generations']},
                 {'name': 'Max clusters', 'type': 'int', 'value': self.activeParams['Max clusters']},
                 {'name': 'Population size', 'type': 'int', 'value': self.activeParams['Population size']},
                 {'name': 'Fitness method', 'type': 'list', 'values': {"db": "db", "cs": "cs"}, 'value': self.activeParams['Fitness method']},
                 {'name': 'q', 'type': 'int', 'value': self.activeParams['q']},
-                {'name': 't', 'type': 'int', 'value': self.activeParams['t']}]
+                {'name': 't', 'type': 'int', 'value': self.activeParams['t']},
+                {'name': 'Distance measure', 'type': 'list', 'values': {"Cosine": "Cosine", "Mahalanobis": "Mahalanobis", "Minkowski_2": "Minkowski_2"}}]
             },
             {'name': 'Dataset stats', 'type': 'group', 'children': [
                 {'name': 'Size', 'type': 'int', 'value': 150, 'readonly': True},
