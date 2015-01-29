@@ -10,15 +10,16 @@ from ui.gui import Ui_MainWindow
 
 class Worker(QtCore.QObject):
     finished = pyqtSignal()
-    #update_data = pyqtSignal(np.ndarray)
-    update_data = pyqtSignal(MessageToGUI)
+    update_data = pyqtSignal(np.ndarray)
+    update_fitness = pyqtSignal(np.ndarray)
     update_gencount = pyqtSignal(int)
     core = None
 
     def work(self):
         for i in range(self.core.config.trajanje_svijeta):
-            results = self.core.cycle()
-            self.update_data.emit(results.colormap)
+            result = self.core.cycle()
+            self.update_data.emit(result.colormap)
+            self.update_fitness.emit(result.fitnessmap)
             self.update_gencount.emit(i)
         self.finished.emit()
 
@@ -46,6 +47,9 @@ class MainWindow(QMainWindow):
     def show_plot(self, state):
         self.plot.show(state)
 
+    def fitprint(self, fitmap):
+        print fitmap
+
     def change_params(self, param, changes):
         for param, change, data in changes:
             self.activeParams[param.name()] = data
@@ -59,6 +63,7 @@ class MainWindow(QMainWindow):
         self.worker.update_gencount.connect(self.plot.w.setGenerationCount)
         self.worker.update_data.connect(self.plot.w.groupItems)
         self.worker.update_data.connect(self.histogram.update)
+        self.worker.update_fitness.connect(self.fitprint)
         self.worker.moveToThread(self.thread)
         self.worker.finished.connect(self.thread.quit)
         self.thread.started.connect(self.worker.work)
@@ -72,17 +77,19 @@ class MainWindow(QMainWindow):
             'Max clusters' : 5,
             'Fitness method': 'db',
             'q' : 2,
-            't' : 2
+            't' : 2,
+            'Distance measure': 'Mahalanobis'
         }
         params = [
             {'name': 'Algorithm properties', 'type': 'group', 'children': [
-                {'name': 'Dataset', 'type': 'list', 'values': {"Iris": "Iris", "Wine": "Wine", "Glass": "Glass"}, 'value': self.activeParams['Dataset']},
+                {'name': 'Dataset', 'type': 'list', 'values': {"Iris": "Iris", "Wine": "Wine", "Glass": "Glass", "Naive": "Naive"}, 'value': self.activeParams['Dataset']},
                 {'name': 'Number of generations', 'type': 'int', 'value': self.activeParams['Number of generations']},
                 {'name': 'Max clusters', 'type': 'int', 'value': self.activeParams['Max clusters']},
                 {'name': 'Population size', 'type': 'int', 'value': self.activeParams['Population size']},
                 {'name': 'Fitness method', 'type': 'list', 'values': {"db": "db", "cs": "cs"}, 'value': self.activeParams['Fitness method']},
                 {'name': 'q', 'type': 'int', 'value': self.activeParams['q']},
-                {'name': 't', 'type': 'int', 'value': self.activeParams['t']}]
+                {'name': 't', 'type': 'int', 'value': self.activeParams['t']},
+                {'name': 'Distance measure', 'type': 'list', 'values': {"Cosine": "Cosine", "Mahalanobis": "Mahalanobis", "Minkowski_2": "Minkowski_2"}}]
             },
             {'name': 'Dataset stats', 'type': 'group', 'children': [
                 {'name': 'Size', 'type': 'int', 'value': 150, 'readonly': True},

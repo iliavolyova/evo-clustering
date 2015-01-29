@@ -4,8 +4,6 @@ import numpy as np
 import random
 import math
 import matplotlib.pyplot as plt
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
 from scipy import spatial
 
 from reader import *
@@ -18,8 +16,14 @@ class Config:
         self.velicina_populacije = params['Population size']
         self.trajanje_svijeta = params['Number of generations']
         self.fitness_metoda = params['Fitness method']
+        self.dist_metoda = params['Distance measure']
         self.db_param_q = params['q']
         self.db_param_t = params['t']
+        self.dist_metoda = params['Distance measure']
+
+        self.inv_cov = None # za mahalanobis distance
+        if self.dist_metoda == 'Mahalanobis':
+            self.inv_cov = np.linalg.inv(np.cov(self.dataset.data, rowvar=0))
 
     def distNd(self, a, b, p):
         sum = 0
@@ -31,13 +35,18 @@ class Config:
     #    return np.power(self.distNd(a, b, 2), self.db_param_q)
 
     def dist(self, a, b):
-        return self.distNd(a, b, 2)
+        if self.dist_metoda == 'Minkowski_2':
+            return self.distNd(a, b, 2)
+        elif self.dist_metoda == 'Mahalanobis':
+            return spatial.distance.mahalanobis(a, b, self.inv_cov)
+        elif self.dist_metoda == 'Cosine':
+            return spatial.distance.cosine(a, b)
 
     def dist_db(self, a, b):
-        return self.dist(a, b);
+        return self.dist(a, b)
 
     def dist_cs(self, a, b):
-        return self.dist(a, b);
+        return self.dist(a, b)
 
     def crossover_rate(self, t): # t jer se vremenom spusta
         return 0.5 + 0.5 * (self.trajanje_svijeta - t) / self.trajanje_svijeta
@@ -50,12 +59,7 @@ class Config:
         elif dataset == 'Glass' : return Glass()
         elif dataset == 'Wine' : return Wine()
         elif dataset == 'Breast cancer' : return Cancer()
-
-class MessageToGUI(QObject):
-    def __init__(self, colormap, fitnessmap):
-        self.colormap = colormap
-        self.fitnessmap = fitnessmap
-
+        elif dataset == 'Naive' : return Naive()
 
 class Core:
     def __init__(self, config):
@@ -89,7 +93,7 @@ class Core:
        if self.cycles < self.config.trajanje_svijeta:
            self.p.evoluiraj(self.cycles)
 
-           fitnessi = [kr.fitness() for kr in self.p.trenutna_generacija]
+           fitnessi = np.array([kr.fitness() for kr in self.p.trenutna_generacija])
            najkrom = np.argmax(fitnessi)
            grupiranje = self.p.trenutna_generacija[najkrom].pridruzivanje()
            colormap = self.p.trenutna_generacija[najkrom].grupiranje()
@@ -99,8 +103,13 @@ class Core:
            self.staro = grupiranje
            self.cycles +=1
 
-           poruka = MessageToGUI(grupiranje, fitnessi)
-           return poruka
+           return CycleResult(colormap, fitnessi)
+
+class CycleResult():
+
+   def __init__(self, colormap, fitnessmap):
+       self.colormap = colormap
+       self.fitnessmap = fitnessmap
 
 class Kromosom:
     geni = []
@@ -260,6 +269,5 @@ class Populacija:
         self.trenutna_generacija = iduca_generacija
 
 if __name__ == '__main__':
-    #c = Core(Config(Iris()))
-    c = Core(Config)
+    c = Core(Config(Iris()))
     c.start()
