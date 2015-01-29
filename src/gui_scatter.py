@@ -95,11 +95,14 @@ class MyGLView(gl.GLViewWidget):
         self.dataItems = {}
         self.generations = 0
         self.colors = {
-            0: np.array([217, 0, 0, 1]),
-            1: np.array([190, 0, 200, 1]),
-            2: np.array([57, 0, 215, 1]),
-            3: np.array([0, 214, 211, 1]),
-            4: np.array([0, 217, 4, 1])
+            0: np.array([255, 0, 0]),
+            1: np.array([0, 255, 0]),
+            2: np.array([0, 0, 255]),
+            3: np.array([0, 125, 125]),
+            4: np.array([125, 125, 0]),
+            5: np.array([125, 0, 125]),
+            6: np.array([255, 0 , 255]),
+            7: np.array([0, 255, 255])
         }
 
     def setGenerationCount(self, gencount):

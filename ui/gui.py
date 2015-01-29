@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'gui.ui'
 #
-# Created: Wed Jan 28 01:44:31 2015
+# Created: Thu Jan 29 23:56:13 2015
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -77,6 +77,10 @@ class Ui_MainWindow(object):
         self.histogram_widget.setObjectName(_fromUtf8("histogram_widget"))
         self.verticalLayout_2.addWidget(self.histogram_widget)
         self.horizontalLayout.addLayout(self.verticalLayout_2)
+        self.checkBox_logging = QtGui.QCheckBox(self.tab_current)
+        self.checkBox_logging.setGeometry(QtCore.QRect(230, 450, 111, 26))
+        self.checkBox_logging.setChecked(False)
+        self.checkBox_logging.setObjectName(_fromUtf8("checkBox_logging"))
         self.tabWidget.addTab(self.tab_current, _fromUtf8(""))
         self.tab_stats = QtGui.QWidget()
         self.tab_stats.setObjectName(_fromUtf8("tab_stats"))
@@ -103,5 +107,6 @@ class Ui_MainWindow(object):
         item.setText(_translate("MainWindow", "Axes", None))
         item = self.table_axes.horizontalHeaderItem(1)
         item.setText(_translate("MainWindow", "showing", None))
+        self.checkBox_logging.setText(_translate("MainWindow", "Log progress", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_current), _translate("MainWindow", "Current Run", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_stats), _translate("MainWindow", "Stats", None))

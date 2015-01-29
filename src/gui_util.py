@@ -1,5 +1,4 @@
 from PyQt4 import QtCore, QtGui
-import operator
 import re
 import numpy as np
 import pyqtgraph as pg
@@ -36,6 +35,7 @@ class AxesTable():
                 checkbox = self.table.item(row, 1)
                 checkbox.setCheckState(QtCore.Qt.Checked)
                 checkbox.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
+                self.main.plot.w.groupItems(self.main.config.dataset.params['ClusterMap'])
         else:
             item.setText('')
 
@@ -91,7 +91,7 @@ class ParamTree():
             'Fitness method': 'db',
             'q' : 2,
             't' : 2,
-            'Distance measure': 'Mahalanobis'
+            'Distance measure': 'Minkowski_2'
         }
         self.datasetParams = {
             'Size' : 150,

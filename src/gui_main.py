@@ -2,11 +2,15 @@ import sys
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-
 import gui_scatter
 from core import *
 from gui_util import *
 from ui.gui import Ui_MainWindow
+
+import Tkinter # zbog pyinstallera
+import FileDialog # zbog pyinstallera
+from Tkinter import *
+from tkFileDialog import *
 
 class Worker(QtCore.QObject):
     finished = pyqtSignal()
@@ -14,19 +18,46 @@ class Worker(QtCore.QObject):
     update_fitness = pyqtSignal(np.ndarray)
     update_gencount = pyqtSignal(int)
     core = None
+    isLogging = False
 
     def work(self):
+        f = None
+        if self.isLogging:
+            root = Tkinter.Tk()
+            root.withdraw()
+            f = asksaveasfile(parent=root, mode='w', filetypes=[('CSV', '*.csv')], defaultextension=".csv")
+
+        text = 'Iteracija:;' + ';'.join([str(s) for s in range(self.core.config.trajanje_svijeta)])
+        text += '\nVrijednost fitness funkcije:'
+
         for i in range(self.core.config.trajanje_svijeta):
             result = self.core.cycle()
             self.update_data.emit(result.colormap)
             #self.update_fitness.emit(result.fitnessmap)
             self.update_gencount.emit(i)
+            text += str(max(result.fitnessmap)).replace('.', ',') + ';'
         self.finished.emit()
+
+        # racunamo fitness optimalne particije
+        tocke = self.core.config.dataset.data
+        klasteri = self.core.config.dataset.params['ClusterMap']
+        particija = [[] for x in range(len(set(klasteri)))]
+        for i, t in enumerate(tocke):
+           particija[klasteri[i] - 1].append(t)
+
+        testni = Kromosom(self.core.config, [], True)
+        text += '\nFitness sluzbenog rjesenja:;' + str(testni.fitness(particija)).replace('.', ',')
+        text += '\n(Vise je bolje)'
+
+        if not f is None:
+           f.write(text)
+           f.close()
 
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super(QMainWindow, self).__init__(parent)
         self.isPlotShowing = False
+        self.isLogging = False
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
@@ -45,9 +76,13 @@ class MainWindow(QMainWindow):
 
         self.ui.button_start.clicked.connect(self.start)
         self.ui.checkBox_plotShowing.stateChanged.connect(self.show_plot)
+        self.ui.checkBox_logging.stateChanged.connect(self.is_logging)
 
     def show_plot(self, state):
         self.plot.show(state)
+
+    def is_logging(self, state):
+        self.isLogging = state
 
     def fitprint(self, fitmap):
         print fitmap
@@ -59,8 +94,10 @@ class MainWindow(QMainWindow):
         self.config = Config(self.parameters.activeParams)
         if param.opts['name'] == 'Dataset':
             self.histogram = HistoPlot(self.ui.histogram_widget, self.config.k_max)
-            self.histogram.add_optimal(self.config.dataset.params)
             self.plot.setData(self.config.dataset.data)
+            if 'ClusterMap' in self.config.dataset.params:
+                self.plot.w.groupItems(self.config.dataset.params['ClusterMap'])
+                self.histogram.add_optimal(self.config.dataset.params)
             for key, value in self.config.dataset.params.iteritems():
                 children = self.parameters.tree.child('Dataset stats').children()
                 for c in children:
@@ -73,6 +110,7 @@ class MainWindow(QMainWindow):
         self.histogram.add_current()
         self.thread = QtCore.QThread()
         self.worker = Worker()
+        self.worker.isLogging = self.isLogging
         self.worker.core = Core(self.config)
         self.worker.update_gencount.connect(self.plot.w.setGenerationCount)
         self.worker.update_data.connect(self.plot.w.groupItems)

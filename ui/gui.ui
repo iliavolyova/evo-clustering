@@ -135,6 +135,22 @@
        </item>
       </layout>
      </widget>
+     <widget class="QCheckBox" name="checkBox_logging">
+      <property name="geometry">
+       <rect>
+        <x>230</x>
+        <y>450</y>
+        <width>111</width>
+        <height>26</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Log progress</string>
+      </property>
+      <property name="checked">
+       <bool>false</bool>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="tab_stats">
      <attribute name="title">

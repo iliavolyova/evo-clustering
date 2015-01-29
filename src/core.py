@@ -111,8 +111,10 @@ class CycleResult():
 class Kromosom:
     geni = []
 
-    def __init__(self, config, g=[]):
+    def __init__(self, config, g=[], nepravi=False):
         self.config = config
+        if nepravi: return
+
         if len(g):
             self.geni = g
         else:
@@ -181,8 +183,9 @@ class Kromosom:
 
     def grupiranje(self):
         colormap = np.zeros(len(self.config.dataset.data), dtype=int)
+        centri = self.aktivni_centri()
         for t in self.config.dataset.data:
-            najbl = np.argmin([self.config.dist(c, t) for c in self.aktivni_centri()])
+            najbl = np.argmin([self.config.dist(c, t) for c in centri])
             colormap[self.config.dataset.data.index(t)] = najbl
         return colormap
 
