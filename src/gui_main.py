@@ -40,7 +40,8 @@ class MainWindow(QMainWindow):
         self.plot.w.die.connect(self.untick_show_plot)
 
         self.axestable = AxesTable(self, self.ui.table_axes)
-        self.histogram = HistoPlot(self.ui.histogram_widget)
+        self.histogram = HistoPlot(self.ui.histogram_widget, 5)
+        self.histogram.add_optimal(self.config.dataset.params)
 
         self.ui.button_start.clicked.connect(self.start)
         self.ui.checkBox_plotShowing.stateChanged.connect(self.show_plot)
@@ -55,8 +56,10 @@ class MainWindow(QMainWindow):
         for param, change, data in changes:
             if param.name() in self.parameters.activeParams:
                 self.parameters.activeParams[param.name()] = data
+        self.config = Config(self.parameters.activeParams)
         if param.opts['name'] == 'Dataset':
-            self.config = Config(self.parameters.activeParams)
+            self.histogram = HistoPlot(self.ui.histogram_widget, self.config.k_max)
+            self.histogram.add_optimal(self.config.dataset.params)
             self.plot.setData(self.config.dataset.data)
             for key, value in self.config.dataset.params.iteritems():
                 children = self.parameters.tree.child('Dataset stats').children()
@@ -67,6 +70,7 @@ class MainWindow(QMainWindow):
                     self.parameters.addClusters(value)
 
     def start(self):
+        self.histogram.add_current()
         self.thread = QtCore.QThread()
         self.worker = Worker()
         self.worker.core = Core(self.config)
@@ -80,7 +84,7 @@ class MainWindow(QMainWindow):
         self.thread.start()
     
     def closeEvent(self, QCloseEvent):
-        self.show_plot(False)
+        self.plot.w.close()
         QCloseEvent.accept()
     
     def untick_show_plot(self):

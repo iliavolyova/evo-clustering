@@ -24,7 +24,7 @@ class Dataset(object):
             if isinstance(classList[0], str):
                 self.params['ClusterMap'] = self.toIntList(classList)
             else:
-                self.params['ClusterMap'] = classList
+                self.params['ClusterMap'] = sorted(classList)
 
         self.params['Size'] = len(self.data)
         self.params['Features'] = len(self.data[0])
