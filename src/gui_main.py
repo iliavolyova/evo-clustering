@@ -78,11 +78,11 @@ class MainWindow(QMainWindow):
         self.worker.finished.connect(self.thread.quit)
         self.thread.started.connect(self.worker.work)
         self.thread.start()
-
+    
     def closeEvent(self, QCloseEvent):
         self.show_plot(False)
         QCloseEvent.accept()
-
+    
     def untick_show_plot(self):
         self.ui.checkBox_plotShowing.setCheckState(Qt.Unchecked)
 

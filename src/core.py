@@ -16,8 +16,14 @@ class Config:
         self.velicina_populacije = params['Population size']
         self.trajanje_svijeta = params['Number of generations']
         self.fitness_metoda = params['Fitness method']
+        self.dist_metoda = params['Distance measure']
         self.db_param_q = params['q']
         self.db_param_t = params['t']
+        self.dist_metoda = params['Distance measure']
+
+        self.inv_cov = None # za mahalanobis distance
+        if self.dist_metoda == 'Mahalanobis':
+            self.inv_cov = np.linalg.inv(np.cov(self.dataset.data, rowvar=0))
 
     def distNd(self, a, b, p):
         sum = 0
@@ -29,7 +35,12 @@ class Config:
     #    return np.power(self.distNd(a, b, 2), self.db_param_q)
 
     def dist(self, a, b):
-        return self.distNd(a, b, 2)
+        if self.dist_metoda == 'Minkowski_2':
+            return self.distNd(a, b, 2)
+        elif self.dist_metoda == 'Mahalanobis':
+            return spatial.distance.mahalanobis(a, b, self.inv_cov)
+        elif self.dist_metoda == 'Cosine':
+            return spatial.distance.cosine(a, b)
 
     def dist_db(self, a, b):
         return self.dist(a, b)
@@ -48,6 +59,7 @@ class Config:
         elif dataset == 'Glass' : return Glass()
         elif dataset == 'Wine' : return Wine()
         elif dataset == 'Breast cancer' : return Cancer()
+        elif dataset == 'Naive' : return Naive()
 
 class Core:
     def __init__(self, config):
