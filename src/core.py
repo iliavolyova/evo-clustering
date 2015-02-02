@@ -36,7 +36,8 @@ class Config:
 
     def dist(self, a, b):
         if self.dist_metoda == 'Minkowski_2':
-            return self.distNd(a, b, 2)
+            #return self.distNd(a, b, 2)
+            return spatial.distance.minkowski(a, b, 2)
         elif self.dist_metoda == 'Mahalanobis':
             return spatial.distance.mahalanobis(a, b, self.inv_cov)
         elif self.dist_metoda == 'Cosine':
@@ -208,7 +209,7 @@ class Kromosom:
         return K / sum(
             [max(
                 [(S[igrupa] + S[igrupa2]) /
-                 self.config.distNd(centri[igrupa], centri[igrupa2], self.config.db_param_t)
+                 spatial.distance.minkowski(centri[igrupa], centri[igrupa2], self.config.db_param_t)
                  for igrupa2, grupa2 in enumerate(particija) if igrupa != igrupa2])
              for igrupa, grupa in enumerate(particija)]
         )
@@ -217,18 +218,20 @@ class Kromosom:
         if not particija:
             particija = self.pridruzivanje()
 
+        particija = [x for x in particija if x != []]
+
         K = len(particija)
         duljine = [len(p) for p in particija]
         a = sum([sum([max([self.config.dist_cs(particija[i][x1], particija[i][x2])
                           for x2 in range(len(particija[i]))])
                      for x1 in range(len(particija[i]))]) / duljine[i]
-                 for i in range(len(particija)) if duljine[i] > 0])
-
-        b = sum([min([self.config.dist_cs(particija[i][x1], particija[i][x2])
-                      for x1 in range(len(particija[i]))
-                      for x2 in range(len(particija[i]))
-                      if x1 != x2])
                  for i in range(len(particija)) if duljine[i] > 1])
+
+        centri = [np.average(grupa, axis=0) for grupa in particija]
+        b = sum([min([self.config.dist_cs(centri[i], centri[j])
+                      for j in range(len(particija))
+                      if j != i])
+                 for i in range(len(particija)) ])
 
         return b / (a + 0.000001)
 
