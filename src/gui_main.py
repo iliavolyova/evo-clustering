@@ -36,7 +36,6 @@ class Worker(QtCore.QObject):
             #self.update_fitness.emit(result.fitnessmap)
             self.update_gencount.emit(i)
             text += str(max(result.fitnessmap)).replace('.', ',') + ';'
-        self.finished.emit()
 
         # racunamo fitness optimalne particije
         tocke = self.core.config.dataset.data
@@ -52,6 +51,8 @@ class Worker(QtCore.QObject):
         if not f is None:
            f.write(text)
            f.close()
+
+        self.finished.emit()
 
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):

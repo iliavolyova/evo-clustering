@@ -36,7 +36,8 @@ class Config:
 
     def dist(self, a, b):
         if self.dist_metoda == 'Minkowski_2':
-            return self.distNd(a, b, 2)
+            #return self.distNd(a, b, 2)
+            return spatial.distance.minkowski(a, b, 2)
         elif self.dist_metoda == 'Mahalanobis':
             return spatial.distance.mahalanobis(a, b, self.inv_cov)
         elif self.dist_metoda == 'Cosine':
