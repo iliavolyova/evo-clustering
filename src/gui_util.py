@@ -13,7 +13,7 @@ class AxesTable():
         for row in range(rows):
             for column in range(columns):
                 item = QtGui.QTableWidgetItem('')
-                if column == 1:
+                if column == 1 or column == 2:
                     item.setCheckState(QtCore.Qt.Unchecked)
                     flags = ~QtCore.Qt.ItemIsEnabled
                     flags |= QtCore.Qt.ItemIsUserCheckable
@@ -43,8 +43,10 @@ class AxesTable():
         if col == 0:
             item = QtGui.QTableWidgetItem(text)
             checkbox = self.table.item(row, 1)
+            checkbox2 = self.table.item(row, 2)
             checkbox.setCheckState(QtCore.Qt.Checked)
             checkbox.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
+            checkbox2.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
             self.table.setItem(row, col, item)
 
 
@@ -53,7 +55,10 @@ class HistoPlot():
         self.widget = plot_widget
         self.widget.clear()
         self.widget.addLegend(offset=(-1,1))
+        self.widget.setLabel('left', 'Samples in cluster')
+        self.widget.setLabel('bottom', 'Cluster')
         self.max_clusters = max_clusters
+
 
     def add_optimal(self, dataset_params):
         self.dataset_params = dataset_params
@@ -134,3 +139,33 @@ class ParamTree():
             children.append({'name': k, 'value': v, 'type': 'int', 'readonly': True})
 
         clustersGroup.addChildren(children)
+
+class FitnessPlot():
+    def __init__(self, widget, optimalFitness, initial_generations):
+        self.widget = widget
+        self.widget.clear()
+        self.widget.setLabel('left', 'Fitness value')
+        self.widget.setLabel('bottom', 'Generation')
+        self.optfit = optimalFitness
+        self.optimal = self.widget.plot()
+        self.redraw_optimal(initial_generations)
+        self.max_data = []
+        self.min_data = []
+        self.max_curve = self.widget.plot()
+        self.min_curve = self.widget.plot()
+        fill = pg.FillBetweenItem(self.min_curve, self.max_curve, (100, 100, 255))
+        self.widget.addItem(fill)
+
+    def redraw_optimal(self, generations):
+        self.x = np.linspace(0, generations, num=generations)
+        y = np.empty(generations)
+        y.fill(self.optfit)
+        self.optimal.setData(x=self.x, y=y, pen=(255,0,0))
+
+    def add_fitness(self, data):
+        max = np.amax(data)
+        min = np.amin(data)
+        self.max_data.append(max)
+        self.min_data.append(min)
+        self.max_curve.setData(x=self.x[:len(self.max_data)], y=self.max_data, pen='b')
+        self.min_curve.setData(x=self.x[:len(self.min_data)], y=self.min_data, pen='k')

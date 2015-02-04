@@ -1,8 +1,8 @@
+from __future__ import division
 import pyqtgraph.opengl as gl
 import numpy as np
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-
 
 class ScatterPlot():
 
@@ -50,6 +50,19 @@ class ScatterPlot():
         else:
             self.w.hide()
 
+    def showGrid(self, flag):
+        if flag:
+            self.initGrids()
+        else:
+            for i in self.w.gridItems:
+                 self.w.removeItem(i)
+            self.w.gridItems = []
+
+    def setSampleSize(self, size):
+        scaledSize = size / 10
+        for key, item in self.w.dataItems.iteritems():
+            item.setData(size=scaledSize)
+
     def setData(self, data):
         self.data = data
         self.w.clearData()
@@ -57,13 +70,20 @@ class ScatterPlot():
 
     def initGrids(self):
         x = gl.GLGridItem()
+        x.translate(5, 0, 0)
+        x.scale(0.5, 1, 1)
         y = gl.GLGridItem()
         y.rotate(90, 0 , 1 ,0)
         z = gl.GLGridItem()
         z.rotate(90, 1, 0, 0)
+        z.translate(5, 0, 0)
+        z.scale(0.5, 1, 1)
         self.w.addItem(x)
         self.w.addItem(y)
         self.w.addItem(z)
+        self.w.gridItems.append(x)
+        self.w.gridItems.append(y)
+        self.w.gridItems.append(z)
 
     def toBinDigitList(self, row):
         binstring = self.tobin(row).zfill(3)
@@ -93,6 +113,7 @@ class MyGLView(gl.GLViewWidget):
         self.centerOnScreen()
         self.views = {}
         self.dataItems = {}
+        self.gridItems = []
         self.generations = 0
         self.colors = {
             0: np.array([255, 0, 0]),

@@ -1,18 +1,23 @@
 from __future__ import division
+import core
 
 class Dataset(object):
     def __init__(self):
         self.data = []
         self.params = {}
 
-    def readFile(self, localfile, classCol=False):
+    def readFile(self, localfile, classCol=None, ignoreCol=None):
         f = open(localfile, "r")
         self.params['Clusters'] = {}
         classList = []
         for columns in [raw.strip().split(',') for raw in f]:
-            if classCol:
-                self.data.append([float(col) for col in columns[:-1]])
-                currClass = columns[-1]
+            if classCol is not None:
+                currClass = columns[classCol]
+                del columns[classCol]
+                if ignoreCol:
+                    del columns[ignoreCol]
+                self.data.append([float(col) for col in columns])
+
                 if currClass in self.params['Clusters'].keys():
                     self.params['Clusters'][currClass] += 1
                 else:
@@ -48,6 +53,13 @@ class Dataset(object):
     def getRowNum(self):
         return len(self.data)
 
+    def getOptimalFitness(self, config):
+        particija = [[] for x in range(len(set(self.params['ClusterMap'])))]
+        for i, t in enumerate(self.data):
+           particija[self.params['ClusterMap'][i] - 1].append(t)
+        testni = core.Kromosom(config, [], True)
+        return testni.fitness(particija)
+
     def toIntList(self, classes):
         class_map = {}
         class_list = []
@@ -67,28 +79,28 @@ class Iris(Dataset):
     def __init__(self):
         self.localfile = '../data/iris.data'
         Dataset.__init__(self)
-        Dataset.readFile(self, self.localfile, classCol=True)
+        Dataset.readFile(self, self.localfile, classCol=4)
 
 class Wine(Dataset):
 
     def __init__(self):
         self.localfile = '../data/wine.data'
         Dataset.__init__(self)
-        Dataset.readFile(self, self.localfile)
+        Dataset.readFile(self, self.localfile, classCol=0)
 
 class Cancer(Dataset):
 
     def __init__(self):
         self.localfile = '../data/breast-cancer-wisconsin.data'
         Dataset.__init__(self)
-        Dataset.readFile(self, self.localfile, classCol=True)
+        Dataset.readFile(self, self.localfile)
 
 class Glass(Dataset):
 
     def __init__(self):
         self.localfile = '../data/glass.data'
         Dataset.__init__(self)
-        Dataset.readFile(self, self.localfile, classCol=True)
+        Dataset.readFile(self, self.localfile, classCol=10, ignoreCol=0)
 
 class Naive(Dataset):
     def __init__(self):
