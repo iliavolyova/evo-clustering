@@ -126,7 +126,7 @@ class MainWindow(QMainWindow):
             self.ui.button_start.setText("Start")
             return
 
-        self.reinit_graphs()
+        self.graphs.w.reinit_graphs(self.parameters)
         self.ui.button_start.setText("Stop")
         self.graphs.w.histogram.add_current()
         self.worker = Worker()

@@ -22,11 +22,10 @@ class Graphs(pg.GraphicsWindow):
         self.config = config
         layout = pg.GraphicsLayout(border=(100,100,100))
         self.setCentralItem(layout)
-        self.resize(400, 500)
+        self.resize(650, 250)
         self.setWindowTitle('Graphs')
         self.show()
         self.histoWidget = layout.addPlot(title="Cluster histogram")
-        layout.nextRow()
         self.fitnessWidget = layout.addPlot(title="Fitness graph")
 
     def reinit_graphs(self, parameters):
