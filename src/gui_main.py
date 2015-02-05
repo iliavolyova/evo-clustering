@@ -13,6 +13,9 @@ import FileDialog # zbog pyinstallera
 from Tkinter import *
 from tkFileDialog import *
 
+import log
+from sklearn import metrics
+
 class Worker(QtCore.QObject):
     log = pyqtSignal(str)
     finished = pyqtSignal()
@@ -24,9 +27,17 @@ class Worker(QtCore.QObject):
     running = False
 
     def work(self):
+        f = None
+        logger = log.log()
 
-        text = 'Iteracija:;' + ';'.join([str(s) for s in range(self.core.config.trajanje_svijeta)])
-        text += '\nVrijednost fitness funkcije:'
+        if self.isLogging:
+            root = Tkinter.Tk()
+            root.withdraw()
+            f = asksaveasfilename(parent=root, filetypes=[('CSV', '*.csv')], defaultextension=".csv")
+            logger.set_file(f)
+            logger.set_header(self.core.config)
+            optklasteri =  self.core.config.dataset.params['ClusterMap']
+
 
         for i in range(self.core.config.trajanje_svijeta):
             if self.running:
@@ -34,21 +45,22 @@ class Worker(QtCore.QObject):
                 self.update_data.emit(result.colormap)
                 self.update_fitness.emit(result.fitnessmap)
                 self.update_gencount.emit(i)
-                text += str(max(result.fitnessmap)).replace('.', ',') + ';'
+                if self.isLogging:
+                    logger.push_colormap(result.colormap)
+                    logger.push_measures([
+                        metrics.adjusted_rand_score(result.colormap, optklasteri),
+                        metrics.adjusted_mutual_info_score(result.colormap, optklasteri),
+                        metrics.homogeneity_score(result.colormap, optklasteri),
+                        metrics.completeness_score(result.colormap, optklasteri),
+                        metrics.v_measure_score(result.colormap, optklasteri),
+                        max(result.fitnessmap)
+                    ])
 
-        # racunamo fitness optimalne particije
-        tocke = self.core.config.dataset.data
-        klasteri = self.core.config.dataset.params['ClusterMap']
-        particija = [[] for x in range(len(set(klasteri)))]
-        for i, t in enumerate(tocke):
-           particija[klasteri[i] - 1].append(t)
-
-        testni = Kromosom(self.core.config, [], True)
-        text += '\nFitness sluzbenog rjesenja:;' + str(testni.fitness(particija)).replace('.', ',')
-        text += '\n(Vise je bolje)'
+        self.update_gencount.emit(self.core.config.trajanje_svijeta)
 
         if self.isLogging:
-            self.log.emit()
+            logger.flush()
+
 
         self.finished.emit()
 
@@ -127,7 +139,7 @@ class MainWindow(QMainWindow):
         self.worker.update_data.connect(self.plot.w.groupItems)
         self.worker.update_data.connect(self.histogram.update)
         self.worker.update_fitness.connect(self.fitness_plot.add_fitness)
-        self.worker.log.connect(self.write_log)
+        #self.worker.log.connect(self.write_log)
         self.worker.moveToThread(self.thread)
         self.worker.finished.connect(self.thread.quit)
         self.thread.started.connect(self.worker.work)
@@ -147,13 +159,13 @@ class MainWindow(QMainWindow):
         self.ui.progressBar.setValue(scaled)
         self.ui.evolutions_label.setText(str(progress) + ' of ' + str(generations))
 
-    def write_log(self, text):
-        if self.isLogging:
-            root = Tkinter.Tk()
-            root.withdraw()
-            f = asksaveasfile(parent=root, mode='w', filetypes=[('CSV', '*.csv')], defaultextension=".csv")
-            f.write(text)
-            f.close()
+    #def write_log(self, text):
+    #    if self.isLogging:
+    #        root = Tkinter.Tk()
+    #        root.withdraw()
+    #        f = asksaveasfile(parent=root, mode='w', filetypes=[('CSV', '*.csv')], defaultextension=".csv")
+    #        f.write(text)
+    #        f.close()
 
     def reinit_graphs(self):
         optimalFitness = self.config.dataset.getOptimalFitness(self.config)

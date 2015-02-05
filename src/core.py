@@ -5,6 +5,7 @@ import random
 import math
 import matplotlib.pyplot as plt
 from scipy import spatial
+import time
 
 from dataset import *
 
@@ -19,7 +20,6 @@ class Config:
         self.dist_metoda = params['Distance measure']
         self.db_param_q = params['q']
         self.db_param_t = params['t']
-        self.dist_metoda = params['Distance measure']
 
         self.inv_cov = None # za mahalanobis distance
         if self.dist_metoda == 'Mahalanobis':
@@ -272,5 +272,52 @@ class Populacija:
         self.trenutna_generacija = iduca_generacija
 
 if __name__ == '__main__':
-    c = Core(Config(Iris()))
-    c.start()
+    f = open('log_'+str(time.time()) , 'w')
+
+    #text = 'Iteracija:;' + ';'.join([str(s) for s in range(.core.config.trajanje_svijeta)])
+    #text += '\nVrijednost fitness funkcije:'
+    for dts in ['Iris', 'Wine', 'Glass']:
+        for mcl in [2, 4, 8, 16]:
+            for dst in ["Cosine", "Mahalanobis", "Minkowski_2"]:
+                for q in [2, 4, 8]:
+                    for t in [2, 4, 8]:
+                        confs = {
+                                'Dataset' : dts,
+                                'Number of generations' : 20,
+                                'Population size': 20,
+                                'Max clusters' : mcl,
+                                'Fitness method': 'db',
+                                'q' : q,
+                                't' : t,
+                                'Distance measure': dst
+                        }
+
+                        c = Core(Config(confs))
+
+                        #print c.config.dataset.params['ClusterMap']
+
+                        f.write(str(confs) + "\n")
+
+                        for i in range(c.config.trajanje_svijeta):
+                            result = c.cycle()
+                            #self.update_data.emit()
+                            if (i == c.config.trajanje_svijeta - 1):
+                                f.write("\n" + str(i) + ": \t" + np.array_str(result.colormap, max_line_width = 10000) + "; ")
+
+                            #self.update_fitness.emit(result.fitnessmap)
+                            f.write(str(max(result.fitnessmap)).replace('.', ',') + '; ')
+
+                        # racunamo fitness optimalne particije
+                        tocke = c.config.dataset.data
+                        klasteri = c.config.dataset.params['ClusterMap']
+                        particija = [[] for x in range(len(set(klasteri)))]
+                        for i, t in enumerate(tocke):
+                           particija[klasteri[i] - 1].append(t)
+
+                        testni = Kromosom(c.config, [], True) # samo fitness koristimo, ne cijeli kromosom
+                        f.write("\n" + str(testni.fitness(particija)).replace('.', ',') + "\n\n")
+                        f.write("\n" + str(testni.fitness_cs(particija)).replace('.', ',') + "\n\n")
+
+                        f.flush()
+
+    f.close()
