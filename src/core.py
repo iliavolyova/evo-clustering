@@ -3,7 +3,6 @@ from __future__ import division
 import numpy as np
 import random
 import math
-import matplotlib.pyplot as plt
 from scipy import spatial
 import time
 
@@ -20,34 +19,39 @@ class Config:
         self.dist_metoda = params['Distance measure']
         self.db_param_q = params['q']
         self.db_param_t = params['t']
+        self.weights_on = params['Feature significance'] or False
+        self.weights = self.dataset.params['Feature weights']
 
-        self.inv_cov = None # za mahalanobis distance
         if self.dist_metoda == 'Mahalanobis':
             self.inv_cov = np.linalg.inv(np.cov(self.dataset.data, rowvar=0))
 
-    def distNd(self, a, b, p):
-        sum = 0
-        for i in range(len(a)):
-            sum += (a[i] - b[i])**p
-        return math.pow(sum, 1 / p)
-
-    #def dist_db(self, a, b):
-    #    return np.power(self.distNd(a, b, 2), self.db_param_q)
-
     def dist(self, a, b):
         if self.dist_metoda == 'Minkowski_2':
-            #return self.distNd(a, b, 2)
             return spatial.distance.minkowski(a, b, 2)
         elif self.dist_metoda == 'Mahalanobis':
             return spatial.distance.mahalanobis(a, b, self.inv_cov)
         elif self.dist_metoda == 'Cosine':
             return spatial.distance.cosine(a, b)
 
+    def dist_weighted(self, a, b):
+        if self.dist_metoda == 'Minkowski_2':
+            return spatial.distance.wminkowski(a, b, p=2, w=self.weights)
+        elif self.dist_metoda == 'Mahalanobis':
+            return spatial.distance.mahalanobis(a, b, self.inv_cov)
+        elif self.dist_metoda == 'Cosine':
+            return spatial.distance.cosine(a, b)
+
     def dist_db(self, a, b):
-        return self.dist(a, b)
+        if self.weights_on:
+            return self.dist_weighted(a,b)
+        else:
+            return self.dist(a, b)
 
     def dist_cs(self, a, b):
-        return self.dist(a, b)
+        if self.weights_on:
+            return self.dist_weighted(a,b)
+        else:
+            return self.dist(a, b)
 
     def crossover_rate(self, t): # t jer se vremenom spusta
         return 0.5 + 0.5 * (self.trajanje_svijeta - t) / self.trajanje_svijeta
@@ -72,24 +76,6 @@ class Core:
     def setConfig(self, config):
         self.config = config
 
-    def start(self):
-        p = Populacija(self.config)
-        plt.xlim(-50, 150)
-        plt.ylim(-50, 150)
-
-        for i in range(self.config.trajanje_svijeta):
-            p.evoluiraj(i)
-            print(i, '/', self.config.trajanje_svijeta)
-
-            najkrom = np.argmax([kr.fitness() for kr in p.trenutna_generacija])
-            grupiranje = p.trenutna_generacija[najkrom].pridruzivanje()
-
-            if i % 1 == 0:
-                #plt.clf()
-                for klasa in grupiranje:
-                    plt.plot([t[0] * 100 for t in klasa], [t[1] * 100 for t in klasa], 'o', markersize=12 , color=(random.random(), random.random(), random.random()))
-                #plt.show()
-
     def cycle(self):
        if self.cycles < self.config.trajanje_svijeta:
            self.p.evoluiraj(self.cycles)
@@ -98,16 +84,18 @@ class Core:
            najkrom = np.argmax(fitnessi)
            grupiranje = self.p.trenutna_generacija[najkrom].pridruzivanje()
            colormap = self.p.trenutna_generacija[najkrom].grupiranje()
+           centri = self.p.trenutna_generacija[najkrom].aktivni_centri()
 
            self.staro = grupiranje
            self.cycles +=1
 
-           return CycleResult(colormap, fitnessi)
+           return CycleResult(colormap, fitnessi, centri)
 
 class CycleResult():
-   def __init__(self, colormap, fitnessmap):
+   def __init__(self, colormap, fitnessmap, centroids):
        self.colormap = colormap
        self.fitnessmap = fitnessmap
+       self.centroids = centroids
 
 class Kromosom:
     geni = []
@@ -195,10 +183,7 @@ class Kromosom:
            particija = self.pridruzivanje()
 
         particija = [x for x in particija if x != []]
-
         K = len(particija)
-        duljine = [len(grupa) for grupa in particija]
-
         centri = [np.average(grupa, axis=0) for grupa in particija]
 
         #rasprsenja
@@ -206,40 +191,41 @@ class Kromosom:
                       1 / self.config.db_param_q)
              for igrupa, grupa in enumerate(particija)]
 
-        return K / sum(
+        return sum(
             [max(
                 [(S[igrupa] + S[igrupa2]) /
                  spatial.distance.minkowski(centri[igrupa], centri[igrupa2], self.config.db_param_t)
                  for igrupa2, grupa2 in enumerate(particija) if igrupa != igrupa2])
              for igrupa, grupa in enumerate(particija)]
-        )
+        ) / K
 
     def fitness_cs(self, particija=[]):
-        if not particija:
-            particija = self.pridruzivanje()
+        if not len(particija):
+            particija1 = self.pridruzivanje()
+            particija1 = [x for x in particija1 if x != []]
+        else:
+            particija1 = [x for x in particija if x != []]
 
-        particija = [x for x in particija if x != []]
+        duljine = [len(p) for p in particija1]
+        a = np.sum([np.sum([np.amax([self.config.dist_cs(particija1[i][x1], particija1[i][x2])
+                          for x2 in range(len(particija1[i]))])
+                     for x1 in range(len(particija1[i]))]) / duljine[i]
+                 for i in range(len(particija1)) if duljine[i] > 1])
 
-        K = len(particija)
-        duljine = [len(p) for p in particija]
-        a = sum([sum([max([self.config.dist_cs(particija[i][x1], particija[i][x2])
-                          for x2 in range(len(particija[i]))])
-                     for x1 in range(len(particija[i]))]) / duljine[i]
-                 for i in range(len(particija)) if duljine[i] > 1])
 
-        centri = [np.average(grupa, axis=0) for grupa in particija]
-        b = sum([min([self.config.dist_cs(centri[i], centri[j])
-                      for j in range(len(particija))
+        centri = [np.average(grupa, axis=0) for grupa in particija1]
+        b = np.sum([np.amin([self.config.dist_cs(centri[i], centri[j])
+                      for j in range(len(particija1))
                       if j != i])
-                 for i in range(len(particija)) ])
+                 for i in range(len(particija1))])
 
-        return b / (a + 0.000001)
+        return a / b
 
     def fitness(self, particija=[]):
         if self.config.fitness_metoda == 'cs':
-            return self.fitness_cs(particija)
+            return 1 / (self.fitness_cs(particija) + 0.000001)
         else:
-            return self.fitness_db(particija)
+            return 1 / (self.fitness_db(particija) + 0.000001)
 
 
 class Populacija:
@@ -274,8 +260,6 @@ class Populacija:
 if __name__ == '__main__':
     f = open('log_'+str(time.time()) , 'w')
 
-    #text = 'Iteracija:;' + ';'.join([str(s) for s in range(.core.config.trajanje_svijeta)])
-    #text += '\nVrijednost fitness funkcije:'
     for dts in ['Iris', 'Wine', 'Glass']:
         for mcl in [2, 4, 8, 16]:
             for dst in ["Cosine", "Mahalanobis", "Minkowski_2"]:
@@ -294,17 +278,13 @@ if __name__ == '__main__':
 
                         c = Core(Config(confs))
 
-                        #print c.config.dataset.params['ClusterMap']
-
                         f.write(str(confs) + "\n")
 
                         for i in range(c.config.trajanje_svijeta):
                             result = c.cycle()
-                            #self.update_data.emit()
                             if (i == c.config.trajanje_svijeta - 1):
                                 f.write("\n" + str(i) + ": \t" + np.array_str(result.colormap, max_line_width = 10000) + "; ")
 
-                            #self.update_fitness.emit(result.fitnessmap)
                             f.write(str(max(result.fitnessmap)).replace('.', ',') + '; ')
 
                         # racunamo fitness optimalne particije

@@ -1,10 +1,11 @@
 from __future__ import division
-import sys
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
+import gui_graphs
 import gui_scatter
 from core import *
+import log
 from gui_util import *
 from ui.gui import Ui_MainWindow
 
@@ -13,13 +14,13 @@ import FileDialog # zbog pyinstallera
 from Tkinter import *
 from tkFileDialog import *
 
-import log
 from sklearn import metrics
 
 class Worker(QtCore.QObject):
     log = pyqtSignal(str)
     finished = pyqtSignal()
     update_data = pyqtSignal(np.ndarray)
+    update_centroids = pyqtSignal(list)
     update_fitness = pyqtSignal(np.ndarray)
     update_gencount = pyqtSignal(int)
     core = None
@@ -27,7 +28,6 @@ class Worker(QtCore.QObject):
     running = False
 
     def work(self):
-        f = None
         logger = log.log()
 
         if self.isLogging:
@@ -44,6 +44,7 @@ class Worker(QtCore.QObject):
                 result = self.core.cycle()
                 self.update_data.emit(result.colormap)
                 self.update_fitness.emit(result.fitnessmap)
+                self.update_centroids.emit(result.centroids)
                 self.update_gencount.emit(i)
                 if self.isLogging:
                     logger.push_colormap(result.colormap)
@@ -61,17 +62,11 @@ class Worker(QtCore.QObject):
         if self.isLogging:
             logger.flush()
 
-
         self.finished.emit()
-
-    def __del__(self):
-        self.running = False
-        self.wait()
 
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super(QMainWindow, self).__init__(parent)
-        self.isPlotShowing = False
         self.isLogging = False
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
@@ -85,12 +80,15 @@ class MainWindow(QMainWindow):
         self.plot = gui_scatter.ScatterPlot(self.config.dataset.data)
         self.plot.w.die.connect(self.untick_show_plot)
 
-        self.reinit_graphs()
+        self.graphs = gui_graphs.GraphsWrapper(self.config)
+        self.graphs.w.reinit_graphs(self.parameters)
+        self.graphs.w.graphsdying.connect(self.untick_show_graphs)
 
         self.axestable = AxesTable(self, self.ui.table_axes)
 
         self.ui.button_start.clicked.connect(self.start)
         self.ui.checkBox_plotShowing.stateChanged.connect(self.plot.show)
+        self.ui.checkbox_graphs.stateChanged.connect(self.graphs.show_graphs)
         self.ui.checkBox_logging.stateChanged.connect(self.is_logging)
         self.ui.show_grid_checkbox.stateChanged.connect(self.plot.showGrid)
         self.ui.sample_size_slider.valueChanged.connect(self.plot.setSampleSize)
@@ -104,11 +102,11 @@ class MainWindow(QMainWindow):
                 self.parameters.activeParams[param.name()] = data
         self.config = Config(self.parameters.activeParams)
         if param.opts['name'] == 'Dataset':
-            self.histogram = HistoPlot(self.ui.histogram_widget, self.config.k_max)
+            self.graphs.w.reinit_graphs(self.parameters)
             self.plot.setData(self.config.dataset.data)
             if 'ClusterMap' in self.config.dataset.params:
                 self.plot.w.groupItems(self.config.dataset.params['ClusterMap'])
-                self.histogram.add_optimal(self.config.dataset.params)
+                self.graphs.w.histogram.add_optimal(self.config.dataset.params)
             for key, value in self.config.dataset.params.iteritems():
                 children = self.parameters.tree.child('Dataset stats').children()
                 for c in children:
@@ -130,28 +128,35 @@ class MainWindow(QMainWindow):
 
         self.reinit_graphs()
         self.ui.button_start.setText("Stop")
-        self.histogram.add_current()
+        self.graphs.w.histogram.add_current()
         self.worker = Worker()
         self.worker.isLogging = self.isLogging
         self.worker.core = Core(self.config)
         self.worker.update_gencount.connect(self.plot.w.setGenerationCount)
         self.worker.update_gencount.connect(self.update_progress_bar)
         self.worker.update_data.connect(self.plot.w.groupItems)
-        self.worker.update_data.connect(self.histogram.update)
-        self.worker.update_fitness.connect(self.fitness_plot.add_fitness)
+        self.worker.update_centroids.connect(self.plot.w.update_centroids)
+        self.worker.update_data.connect(self.graphs.w.histogram.update)
+        self.worker.update_fitness.connect(self.graphs.w.fitness_plot.add_fitness)
         #self.worker.log.connect(self.write_log)
         self.worker.moveToThread(self.thread)
         self.worker.finished.connect(self.thread.quit)
+        self.worker.finished.connect(self.finished_job)
         self.thread.started.connect(self.worker.work)
         self.worker.running = True
         self.thread.start()
     
     def closeEvent(self, QCloseEvent):
         self.plot.w.close()
+        self.graphs.w.close()
+        del self.graphs
         QCloseEvent.accept()
     
     def untick_show_plot(self):
         self.ui.checkBox_plotShowing.setCheckState(Qt.Unchecked)
+
+    def untick_show_graphs(self):
+        self.ui.checkbox_graphs.setCheckState(Qt.Unchecked)
 
     def update_progress_bar(self, progress):
         generations = self.parameters.activeParams['Number of generations']
@@ -167,11 +172,10 @@ class MainWindow(QMainWindow):
     #        f.write(text)
     #        f.close()
 
-    def reinit_graphs(self):
-        optimalFitness = self.config.dataset.getOptimalFitness(self.config)
-        self.fitness_plot = FitnessPlot(self.ui.fitnes_widget, optimalFitness, self.parameters.activeParams['Number of generations'])
-        self.histogram = HistoPlot(self.ui.histogram_widget, 5)
-        self.histogram.add_optimal(self.config.dataset.params)
+    def finished_job(self):
+        self.worker.running = False
+        self.ui.button_start.setText("Start")
+
 
 def main():
     app = QApplication(sys.argv)

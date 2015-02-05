@@ -35,6 +35,13 @@ class ScatterPlot():
         self.w.dataItems[viewrepr] = item
         self.w.addItem(item)
 
+    def setVisibleCentroid(self, row, show):
+        viewTrans, viewRepr = self.toBinDigitList(row)
+        if viewRepr in self.w.centroids and not show:
+            del self.w.centroids[viewRepr]
+        elif viewRepr not in self.w.centroids and show:
+            self.w.centroids[viewRepr] = True
+
     def setVisible(self, row, show, dimensions):
         viewTrans, viewRepr = self.toBinDigitList(row)
         if viewRepr in self.w.views and not show:
@@ -113,8 +120,10 @@ class MyGLView(gl.GLViewWidget):
         self.centerOnScreen()
         self.views = {}
         self.dataItems = {}
+        self.centroids = {}
         self.gridItems = []
         self.generations = 0
+        self.centroidData = []
         self.colors = {
             0: np.array([255, 0, 0]),
             1: np.array([0, 255, 0]),
@@ -135,6 +144,9 @@ class MyGLView(gl.GLViewWidget):
         for key, item in self.dataItems.iteritems():
             item.setData(color=colormap)
 
+    def update_centroids(self, data):
+        self.centroidData = data
+
     def clearData(self):
         for key, data in self.dataItems.iteritems():
             if self.dataItems[key] in self.items:
@@ -146,6 +158,14 @@ class MyGLView(gl.GLViewWidget):
         for v in self.views:
             vi = v.split(" ")
             self.renderText(int(vi[0])*5, int(vi[1])*5, int(vi[2]) * 11, str(self.views[v]))
+        for c in self.centroids:
+            if len(self.centroidData):
+                ci = c.split(" ")
+                for i in range(len(self.centroidData)):
+                    self.renderText(int(ci[0]) * self.centroidData[i][int(ci[0])] * 10,
+                                    int(ci[1]) * self.centroidData[i][int(ci[1])] * 10,
+                                    int(ci[2]) * self.centroidData[i][int(ci[2])] * 10,
+                                    "x")
         self.renderText(0, 0, 13, "Generation: " + str(self.generations))
 
     def centerOnScreen (self):

@@ -24,17 +24,33 @@ class AxesTable():
 
     def check_input(self, row, col):
         item = self.table.item(row, col)
+        max_dimension = self.main.config.n_dims-1
         regex = re.compile(r'^([0-9]+)\D+([0-9]+)\D+([0-9]+)$')
         match = regex.search(self.table.item(row, 0).text())
         if match:
             axes = [int(num) for num in match.groups()]
+            for axis in axes:
+                if axis > max_dimension:
+                    item.setText('')
+                    return
+            if col == 2 and axes and self.table.item(row, 1):
+                self.main.plot.setVisibleCentroid(row, item.checkState())
             if col == 1 and axes:
                 self.main.plot.setVisible(row, item.checkState(), axes)
+                checkbox_centroids = self.table.item(row, 2)
+                if item.checkState():
+                    checkbox_centroids.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
+                else:
+                    flags = ~QtCore.Qt.ItemIsEnabled
+                    flags |= QtCore.Qt.ItemIsUserCheckable
+                    checkbox_centroids.setFlags(flags)
             if col == 0 and axes:
                 self.main.plot.editViews(row, axes)
                 checkbox = self.table.item(row, 1)
                 checkbox.setCheckState(QtCore.Qt.Checked)
                 checkbox.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
+                checkbox_centroids = self.table.item(row, 2)
+                checkbox_centroids.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
                 self.main.plot.w.groupItems(self.main.config.dataset.params['ClusterMap'])
         else:
             item.setText('')
@@ -50,42 +66,6 @@ class AxesTable():
             self.table.setItem(row, col, item)
 
 
-class HistoPlot():
-    def __init__(self, plot_widget, max_clusters):
-        self.widget = plot_widget
-        self.widget.clear()
-        self.widget.addLegend(offset=(-1,1))
-        self.widget.setLabel('left', 'Samples in cluster')
-        self.widget.setLabel('bottom', 'Cluster')
-        self.max_clusters = max_clusters
-
-
-    def add_optimal(self, dataset_params):
-        self.dataset_params = dataset_params
-        self.bins = np.arange(1, dataset_params['Classes'] + 1)
-        data = dataset_params['ClusterMap']
-        y = [data.count(i) for i in self.bins]
-        self.optimal = pg.BarGraphItem(x=self.bins, height=sorted(y, reverse=True), width=1, brush='r')
-        self.widget.addItem(self.optimal)
-        mockplotdata = pg.PlotDataItem(pen='r')
-        self.widget.plotItem.legend.addItem(mockplotdata, 'optimal')
-
-    def add_current(self):
-        if len(self.bins) < self.max_clusters:
-            self.bins = np.arange(1, self.max_clusters + 1)
-            y = [self.dataset_params['ClusterMap'].count(i) for i in self.bins]
-            self.optimal.setOpts(height=y)
-        self.optimal.setOpts(x=self.bins-0.25, width=0.5)
-        self.current = pg.BarGraphItem(x=self.bins+0.25, height=np.zeros(len(self.bins)), width=0.5, brush='b', name='current clusters')
-        self.widget.addItem(self.current)
-        mockplotdata = pg.PlotDataItem(pen='b')
-        self.widget.plotItem.legend.addItem(mockplotdata, 'current')
-
-    def update(self, vals):
-        scaledvals = vals + 1
-        y = [scaledvals.tolist().count(i) for i in self.bins]
-        self.current.setOpts(height=sorted(y, reverse=True))
-
 class ParamTree():
     def __init__(self):
         self.activeParams = {
@@ -96,7 +76,8 @@ class ParamTree():
             'Fitness method': 'db',
             'q' : 2,
             't' : 2,
-            'Distance measure': 'Minkowski_2'
+            'Distance measure': 'Minkowski_2',
+            'Feature significance': True
         }
         self.datasetParams = {
             'Size' : 150,
@@ -104,7 +85,8 @@ class ParamTree():
             'Classes': 3,
             'Iris-setosa' : 50,
             'Iris-versicolor': 50,
-            'Iris-virginica': 50
+            'Iris-virginica': 50,
+            'Feature weights': [0.7826, -0.4194, 0.9490, 0.9565]
         }
         self.params = [
             {'name': 'Algorithm properties', 'type': 'group', 'children': [
@@ -115,7 +97,8 @@ class ParamTree():
                 {'name': 'Fitness method', 'type': 'list', 'values': {"db": "db", "cs": "cs"}, 'value': self.activeParams['Fitness method']},
                 {'name': 'q', 'type': 'int', 'value': self.activeParams['q']},
                 {'name': 't', 'type': 'int', 'value': self.activeParams['t']},
-                {'name': 'Distance measure', 'type': 'list', 'values': {"Cosine": "Cosine", "Mahalanobis": "Mahalanobis", "Minkowski_2": "Minkowski_2"}, 'value': self.activeParams['Distance measure']}]
+                {'name': 'Distance measure', 'type': 'list', 'values': {"Cosine": "Cosine", "Mahalanobis": "Mahalanobis", "Minkowski_2": "Minkowski_2"}, 'value': self.activeParams['Distance measure']},
+                {'name': 'Feature significance', 'type': 'bool', 'value': self.activeParams['Feature significance']}]
             },
             {'name': 'Dataset stats', 'type': 'group', 'children': [
                 {'name': 'Size', 'type': 'int', 'value': self.datasetParams['Size'], 'readonly': True},
@@ -125,6 +108,12 @@ class ParamTree():
                     {'name': 'Iris-setosa', 'type': 'int', 'value': self.datasetParams['Iris-setosa'], 'readonly': True},
                     {'name': 'Iris-versicolor', 'type': 'int', 'value': self.datasetParams['Iris-versicolor'], 'readonly': True},
                     {'name': 'Iris-virginica', 'type': 'int', 'value': self.datasetParams['Iris-virginica'], 'readonly': True},
+                ]},
+                {'name': 'Feature significance', 'type': 'group', 'children': [
+                    {'name': '1', 'type': 'float', 'value': self.datasetParams['Feature weights'][0], 'readonly': True},
+                    {'name': '2', 'type': 'float', 'value': self.datasetParams['Feature weights'][1], 'readonly': True},
+                    {'name': '3', 'type': 'float', 'value': self.datasetParams['Feature weights'][2], 'readonly': True},
+                    {'name': '4', 'type': 'float', 'value': self.datasetParams['Feature weights'][3], 'readonly': True}
                 ]}]
             }]
 
@@ -139,33 +128,3 @@ class ParamTree():
             children.append({'name': k, 'value': v, 'type': 'int', 'readonly': True})
 
         clustersGroup.addChildren(children)
-
-class FitnessPlot():
-    def __init__(self, widget, optimalFitness, initial_generations):
-        self.widget = widget
-        self.widget.clear()
-        self.widget.setLabel('left', 'Fitness value')
-        self.widget.setLabel('bottom', 'Generation')
-        self.optfit = optimalFitness
-        self.optimal = self.widget.plot()
-        self.redraw_optimal(initial_generations)
-        self.max_data = []
-        self.min_data = []
-        self.max_curve = self.widget.plot()
-        self.min_curve = self.widget.plot()
-        fill = pg.FillBetweenItem(self.min_curve, self.max_curve, (100, 100, 255))
-        self.widget.addItem(fill)
-
-    def redraw_optimal(self, generations):
-        self.x = np.linspace(0, generations, num=generations)
-        y = np.empty(generations)
-        y.fill(self.optfit)
-        self.optimal.setData(x=self.x, y=y, pen=(255,0,0))
-
-    def add_fitness(self, data):
-        max = np.amax(data)
-        min = np.amin(data)
-        self.max_data.append(max)
-        self.min_data.append(min)
-        self.max_curve.setData(x=self.x[:len(self.max_data)], y=self.max_data, pen='b')
-        self.min_curve.setData(x=self.x[:len(self.min_data)], y=self.min_data, pen='k')

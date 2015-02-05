@@ -6,7 +6,7 @@ class Dataset(object):
         self.data = []
         self.params = {}
 
-    def readFile(self, localfile, classCol=None, ignoreCol=None):
+    def readFile(self, localfile, classCol=None, ignoreCol=None, weights=None):
         f = open(localfile, "r")
         self.params['Clusters'] = {}
         classList = []
@@ -34,6 +34,7 @@ class Dataset(object):
         self.params['Size'] = len(self.data)
         self.params['Features'] = len(self.data[0])
         self.params['Classes'] = len(self.params['Clusters'].keys()) if 'Clusters' in self.params else None
+        self.params['Feature weights'] = weights
         self.normalize()
 
     def readArray(self, arr):
@@ -77,9 +78,10 @@ class Dataset(object):
 class Iris(Dataset):
 
     def __init__(self):
+        weights = [0.7826, -0.4194, 0.9490, 0.9565]
         self.localfile = '../data/iris.data'
         Dataset.__init__(self)
-        Dataset.readFile(self, self.localfile, classCol=4)
+        Dataset.readFile(self, self.localfile, classCol=4, weights=weights)
 
 class Wine(Dataset):
 
