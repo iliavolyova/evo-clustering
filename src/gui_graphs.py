@@ -28,8 +28,8 @@ class Graphs(pg.GraphicsWindow):
         self.histoWidget = layout.addPlot(title="Cluster histogram")
         self.fitnessWidget = layout.addPlot(title="Fitness graph")
 
-    def reinit_graphs(self, parameters):
-        optimalFitness = self.config.dataset.getOptimalFitness(self.config)
+    def reinit_graphs(self, config, parameters):
+        optimalFitness = config.dataset.getOptimalFitness(config)
         self.fitness_plot = FitnessPlot(self.fitnessWidget, optimalFitness, parameters.activeParams['Number of generations'])
         self.histogram = HistoPlot(self.histoWidget, 5)
         self.histogram.add_optimal(self.config.dataset.params)

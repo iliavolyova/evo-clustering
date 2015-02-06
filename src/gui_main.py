@@ -81,7 +81,7 @@ class MainWindow(QMainWindow):
         self.plot.w.die.connect(self.untick_show_plot)
 
         self.graphs = gui_graphs.GraphsWrapper(self.config)
-        self.graphs.w.reinit_graphs(self.parameters)
+        self.graphs.w.reinit_graphs(self.config, self.parameters)
         self.graphs.w.graphsdying.connect(self.untick_show_graphs)
 
         self.axestable = AxesTable(self, self.ui.table_axes)
@@ -102,7 +102,7 @@ class MainWindow(QMainWindow):
                 self.parameters.activeParams[param.name()] = data
         self.config = Config(self.parameters.activeParams)
         if param.opts['name'] == 'Dataset':
-            self.graphs.w.reinit_graphs(self.parameters)
+            self.graphs.w.reinit_graphs(self.config, self.parameters)
             self.plot.setData(self.config.dataset.data)
             if 'ClusterMap' in self.config.dataset.params:
                 self.plot.w.groupItems(self.config.dataset.params['ClusterMap'])
@@ -115,8 +115,10 @@ class MainWindow(QMainWindow):
                 if key == 'Clusters':
                     self.parameters.addClusters(value)
         elif param.opts['name'] == 'Number of generations':
-            self.fitness_plot.redraw_optimal(param.opts['value'])
+            self.graphs.w.fitness_plot.redraw_optimal(param.opts['value'])
             self.ui.evolutions_label.setText('0 of ' + str(self.parameters.activeParams['Number of generations']))
+        elif param.opts['name'] == 'Fitness method':
+            self.graphs.w.reinit_graphs(self.config, self.parameters)
 
     def start(self):
         self.thread = QtCore.QThread(self)
@@ -126,7 +128,7 @@ class MainWindow(QMainWindow):
             self.ui.button_start.setText("Start")
             return
 
-        self.graphs.w.reinit_graphs(self.parameters)
+        self.graphs.w.reinit_graphs(self.config, self.parameters)
         self.ui.button_start.setText("Stop")
         self.graphs.w.histogram.add_current()
         self.worker = Worker()
