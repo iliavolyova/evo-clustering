@@ -1,8 +1,6 @@
 from __future__ import division
 import core
-import  random
-from sklearn import preprocessing
-
+import random
 
 class Dataset(object):
     def __init__(self):
@@ -13,7 +11,12 @@ class Dataset(object):
         f = open(localfile, "r")
         self.params['Clusters'] = {}
         classList = []
-        for columns in [raw.strip().split(',') for raw in f]:
+        features = []
+        for cols in [raw.strip().split(',') for raw in f]:
+            features.append(cols)
+        random.shuffle(features)
+
+        for columns in features:
             if classCol is not None:
                 currClass = columns[classCol]
                 del columns[classCol]
@@ -28,12 +31,6 @@ class Dataset(object):
                 classList.append(currClass)
             else:
                 self.data.append([float(col) for col in columns])
-
-        zipano = zip(self.data,classList)
-        random.shuffle(zipano)
-        self.data = [p[0] for p in zipano]
-        classList = [p[1] for p in zipano]
-
         if len(classList) > 0:
             if isinstance(classList[0], str):
                 self.params['ClusterMap'] = self.toIntList(classList)
@@ -51,16 +48,11 @@ class Dataset(object):
         self.normalize()
 
     def normalize(self):
-        #self.data = preprocessing.scale(self.data).tolist()
-
-        '''for dim in range(self.getColNum()):
+        for dim in range(self.getColNum()):
             min_d, max_d = min([t[dim] for t in self.data]), max([t[dim] for t in self.data])
             for t in self.data:
                 t[dim] -= min_d
                 t[dim] /= (max_d - min_d)
-        '''
-
-
 
     def getColNum(self):
         return len(self.data[0])
