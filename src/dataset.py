@@ -1,5 +1,6 @@
 from __future__ import division
 import core
+import random
 
 class Dataset(object):
     def __init__(self):
@@ -10,7 +11,12 @@ class Dataset(object):
         f = open(localfile, "r")
         self.params['Clusters'] = {}
         classList = []
-        for columns in [raw.strip().split(',') for raw in f]:
+        features = []
+        for cols in [raw.strip().split(',') for raw in f]:
+            features.append(cols)
+        random.shuffle(features)
+
+        for columns in features:
             if classCol is not None:
                 currClass = columns[classCol]
                 del columns[classCol]

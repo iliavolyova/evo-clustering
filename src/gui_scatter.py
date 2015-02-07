@@ -162,9 +162,9 @@ class MyGLView(gl.GLViewWidget):
             if len(self.centroidData):
                 ci = c.split(" ")
                 for i in range(len(self.centroidData)):
-                    self.renderText(int(ci[0]) * self.centroidData[i][int(ci[0])] * 10,
-                                    int(ci[1]) * self.centroidData[i][int(ci[1])] * 10,
-                                    int(ci[2]) * self.centroidData[i][int(ci[2])] * 10,
+                    self.renderText(int(ci[0]) * self.centroidData[i][0] * 10,
+                                    int(ci[1]) * self.centroidData[i][1] * 10,
+                                    int(ci[2]) * self.centroidData[i][2] * 10,
                                     "x")
         self.renderText(0, 0, 13, "Generation: " + str(self.generations))
 
