@@ -23,11 +23,18 @@ class ScatterPlot():
             self.addView(viewTrans, dimensions)
 
     def addView(self, viewnum, dimensions):
-        positions = np.array([np.array([
-            (point[dimensions[0]] + 0.05) * viewnum[0],
-            (point[dimensions[1]] + 0.05) * viewnum[1],
-            (point[dimensions[2]] + 0.05) * viewnum[2]])
-                              * 10 for point in self.data])
+        if len(self.data[0]) > 2:
+            positions = np.array([np.array([
+                (point[dimensions[0]] + 0.05) * viewnum[0],
+                (point[dimensions[1]] + 0.05) * viewnum[1],
+                (point[dimensions[2]] + 0.05) * viewnum[2]])
+                                  * 10 for point in self.data])
+        else:
+             positions = np.array([np.array([
+                (point[dimensions[0]] + 0.05) * viewnum[0],
+                (point[dimensions[1]] + 0.05) * viewnum[1],
+                (0.05) * viewnum[2]])
+                                  * 10 for point in self.data])
 
         item = gl.GLScatterPlotItem(pos=positions, color=(1,1,1,1), size=0.5, pxMode=False)
         viewrepr = " ".join(str(v) for v in viewnum)
@@ -140,9 +147,10 @@ class MyGLView(gl.GLViewWidget):
         self.update()
 
     def groupItems(self, groups):
-        colormap = np.array([self.colors[i] for i in groups])
-        for key, item in self.dataItems.iteritems():
-            item.setData(color=colormap)
+        if groups is not None:
+            colormap = np.array([self.colors[i] for i in groups])
+            for key, item in self.dataItems.iteritems():
+                item.setData(color=colormap)
 
     def update_centroids(self, data):
         self.centroidData = data
