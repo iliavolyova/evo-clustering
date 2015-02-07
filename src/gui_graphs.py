@@ -29,7 +29,10 @@ class Graphs(pg.GraphicsWindow):
         self.fitnessWidget = layout.addPlot(title="Fitness graph")
 
     def reinit_graphs(self, config, parameters):
-        optimalFitness = config.dataset.getOptimalFitness(config)
+        if config.dataset.params['ClusterMap'] is not None:
+            optimalFitness = config.dataset.getOptimalFitness(config)
+        else:
+            optimalFitness = 0
         self.fitness_plot = FitnessPlot(self.fitnessWidget, optimalFitness, parameters.activeParams['Number of generations'])
         self.histogram = HistoPlot(self.histoWidget, 5)
         self.histogram.add_optimal(self.config.dataset.params)
@@ -84,6 +87,7 @@ class HistoPlot():
 
     def add_optimal(self, dataset_params):
         self.dataset_params = dataset_params
+
         self.bins = np.arange(1, dataset_params['Classes'] + 1)
         data = dataset_params['ClusterMap']
         y = [data.count(i) for i in self.bins]

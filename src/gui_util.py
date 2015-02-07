@@ -90,7 +90,7 @@ class ParamTree():
         }
         self.params = [
             {'name': 'Algorithm properties', 'type': 'group', 'children': [
-                {'name': 'Dataset', 'type': 'list', 'values': {"Iris": "Iris", "Wine": "Wine", "Glass": "Glass"}, 'value': self.activeParams['Dataset']},
+                {'name': 'Dataset', 'type': 'list', 'values': {"Iris": "Iris", "Wine": "Wine", "Glass": "Glass", "Naive" : "Naive"}, 'value': self.activeParams['Dataset']},
                 {'name': 'Number of generations', 'type': 'int', 'value': self.activeParams['Number of generations']},
                 {'name': 'Max clusters', 'type': 'int', 'value': self.activeParams['Max clusters']},
                 {'name': 'Population size', 'type': 'int', 'value': self.activeParams['Population size']},
