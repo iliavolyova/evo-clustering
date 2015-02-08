@@ -1,5 +1,6 @@
 from __future__ import division
- 
+from matplotlib.pyplot import colormaps
+
 import numpy as np
 import random
 import math
@@ -89,6 +90,7 @@ class Core:
            centri = self.p.trenutna_generacija[najkrom].aktivni_centri()
 
            print centri
+           print colormap
 
            self.staro = grupiranje
            self.cycles +=1
@@ -147,7 +149,7 @@ class Kromosom:
             else:
                 provjereno_ispravno = False
             if not provjereno_ispravno:
-                print "nove"
+                #print "nove"
                 tocaka = self.config.dataset.getRowNum()
                 po_grupi = tocaka // aktivnih
                 ostaci = tocaka % aktivnih
