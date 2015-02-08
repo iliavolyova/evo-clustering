@@ -101,12 +101,8 @@ class MainWindow(QMainWindow):
             if param.name() in self.parameters.activeParams:
                 self.parameters.activeParams[param.name()] = data
         self.config = Config(self.parameters.activeParams)
+        self.plot.reinitPlot(self.config.dataset.data)
         if param.opts['name'] == 'Dataset':
-            self.graphs.w.reinit_graphs(self.config, self.parameters)
-            self.plot.setData(self.config.dataset.data)
-            if 'ClusterMap' in self.config.dataset.params:
-                self.plot.w.groupItems(self.config.dataset.params['ClusterMap'])
-                self.graphs.w.histogram.add_optimal(self.config.dataset.params)
             for key, value in self.config.dataset.params.iteritems():
                 children = self.parameters.tree.child('Dataset stats').children()
                 for c in children:
@@ -117,8 +113,12 @@ class MainWindow(QMainWindow):
         elif param.opts['name'] == 'Number of generations':
             self.graphs.w.fitness_plot.redraw_optimal(param.opts['value'])
             self.ui.evolutions_label.setText('0 of ' + str(self.parameters.activeParams['Number of generations']))
-        elif param.opts['name'] == 'Fitness method':
-            self.graphs.w.reinit_graphs(self.config, self.parameters)
+
+        self.graphs.w.reinit_graphs(self.config, self.parameters)
+        self.plot.setData(self.config.dataset.data)
+        if 'ClusterMap' in self.config.dataset.params:
+            self.plot.w.groupItems(self.config.dataset.params['ClusterMap'])
+            self.graphs.w.histogram.add_optimal(self.config.dataset.params)
 
     def start(self):
         self.thread = QtCore.QThread(self)
