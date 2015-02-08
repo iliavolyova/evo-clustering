@@ -139,7 +139,20 @@ class MyGLView(gl.GLViewWidget):
             4: np.array([125, 125, 0]),
             5: np.array([125, 0, 125]),
             6: np.array([255, 0 , 255]),
-            7: np.array([0, 255, 255])
+            7: np.array([0, 255, 255]),
+            8: np.array([255, 255, 0]),
+            9: np.array([255, 125, 0]),
+            10: np.array([255, 0, 125]),
+            11: np.array([0, 255, 125]),
+            12: np.array([125, 255, 0]),
+            13: np.array([125, 0, 255]),
+            14: np.array([0, 125, 255]),
+            15: np.array([125, 125, 255]),
+            16: np.array([125, 255, 125]),
+            17: np.array([255, 125, 125]),
+            18: np.array([125, 255, 255]),
+            19: np.array([255, 125, 255]),
+            20: np.array([255, 255, 125])
         }
 
     def setGenerationCount(self, gencount):

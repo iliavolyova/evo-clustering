@@ -59,7 +59,7 @@ class Config:
         return 0.5 + 0.5 * (self.trajanje_svijeta - t) / self.trajanje_svijeta
 
     def scale_factor(self):
-        return 0.5 + random.random() *0.5
+        return 0.25 *( 0.5 + random.random() *0.5)
 
     def create_dataset(self, dataset):
         if dataset == 'Iris': return Iris()
@@ -87,6 +87,8 @@ class Core:
            grupiranje = self.p.trenutna_generacija[najkrom].pridruzivanje()
            colormap = self.p.trenutna_generacija[najkrom].grupiranje()
            centri = self.p.trenutna_generacija[najkrom].aktivni_centri()
+
+           print centri
 
            self.staro = grupiranje
            self.cycles +=1
@@ -118,6 +120,12 @@ class Kromosom:
                  for k in range(config.k_max)]   # za svaki centar klastera
             )
 
+        for ccluster in range(config.k_max):
+            if self.geni[ccluster] < 0:
+                self.geni[ccluster] = 0
+            elif self.geni[ccluster] > 1:
+                self.geni[ccluster] = 1
+
         provjereno_ispravno = False
         while not provjereno_ispravno:
             provjereno_ispravno = True
@@ -139,6 +147,7 @@ class Kromosom:
             else:
                 provjereno_ispravno = False
             if not provjereno_ispravno:
+                print "nove"
                 tocaka = self.config.dataset.getRowNum()
                 po_grupi = tocaka // aktivnih
                 ostaci = tocaka % aktivnih

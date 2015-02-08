@@ -45,6 +45,7 @@ class Dataset(object):
 
     def readArray(self, arr, weights):
         self.data = [[t[0], t[1]] for t in arr]
+        random.shuffle(self.data)
 
         self.params['Size'] = len(self.data)
         self.params['Features'] = len(self.data[0])
