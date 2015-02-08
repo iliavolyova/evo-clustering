@@ -57,7 +57,7 @@ class Config:
              return self.dist(a, b)
 
     def crossover_rate(self, t): # t jer se vremenom spusta
-        return 0.5 + 0.5 * (self.trajanje_svijeta - t) / self.trajanje_svijeta
+        return 0.5 +  0.5 * (self.trajanje_svijeta - t) / self.trajanje_svijeta
 
     def scale_factor(self):
         return 0.25 *( 0.5 + random.random() *0.5)
@@ -87,7 +87,7 @@ class Core:
            najkrom = np.argmax(fitnessi)
            grupiranje = self.p.trenutna_generacija[najkrom].pridruzivanje()
            colormap = self.p.trenutna_generacija[najkrom].grupiranje()
-           centri = self.p.trenutna_generacija[najkrom].aktivni_centri()
+           centri = self.p.trenutna_generacija[najkrom].centri_kromosoma()
 
            print centri
            print colormap
@@ -138,13 +138,15 @@ class Kromosom:
                     self.geni[ispravak] = 0.5 + 0.5 * random.random()
                 aktivnih = self.aktivnih_centara()
 
-            particija = self.pridruzivanje()
-            particija_neprazno = [p for p in particija if p != []]
+            particija = self.pridruzivanje(ukljuci_neaktivne_centre=True)
+            # particija_neprazno = [p for p in particija if p != []]
 
             ispravnih = sum([len(grupa) >= 2 for grupa in particija])
             if ispravnih >= 2:
                 # gasimo neispravne, dovoljno je ispravnih
-                particija = [grupa for grupa in particija if len(grupa) >= 2]
+                for i, gr in enumerate(particija):
+                    if len(gr) < 2:
+                        self.geni[i] = 0.4 # 1 - self.geni[i]
                 provjereno_ispravno = True
             else:
                 provjereno_ispravno = False
@@ -168,16 +170,16 @@ class Kromosom:
         if len(self.geni) != config.k_max + config.k_max * config.n_dims:
             print("probl")
 
-    def aktivni_centri(self):
+    def centri_kromosoma(self, samo_aktivni = True):
         return [[self.geni[self.config.k_max + self.config.n_dims * i + dim] for dim in range(self.config.n_dims)]
-                for i in range(self.config.k_max) if self.geni[i] > 0.5]
+                for i in range(self.config.k_max) if (not samo_aktivni) or self.geni[i] > 0.5]
 
     def aktivnih_centara(self):
-        return len(self.aktivni_centri())
+        return sum([1 for centar in range(self.config.k_max) if self.geni[centar] >= 0.5])
 
-    def pridruzivanje(self):
-        centri = self.aktivni_centri()
-        p = [[] for c in centri]
+    def pridruzivanje(self, ukljuci_neaktivne_centre = False):
+        centri = self.centri_kromosoma(samo_aktivni=not ukljuci_neaktivne_centre)
+        p = [[] for _ in centri]
         for t in self.config.dataset.data:
             najbl = np.argmin([self.config.dist(c, t) for c in centri])
             p[najbl].append(t)
@@ -185,7 +187,7 @@ class Kromosom:
 
     def grupiranje(self):
         colormap = np.zeros(len(self.config.dataset.data), dtype=int)
-        centri = self.aktivni_centri()
+        centri = self.centri_kromosoma()
         for t in self.config.dataset.data:
             najbl = np.argmin([self.config.dist(c, t) for c in centri])
             colormap[self.config.dataset.data.index(t)] = najbl
