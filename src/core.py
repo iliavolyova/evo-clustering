@@ -1,5 +1,6 @@
 from __future__ import division
- 
+from matplotlib.pyplot import colormaps
+
 import numpy as np
 import random
 import math
@@ -43,21 +44,23 @@ class Config:
 
     def dist_db(self, a, b):
         if self.weights_on:
-            return self.dist_weighted(a,b)
+            #return self.dist_weighted(a,b)
+            return self.dist(a, b)
         else:
             return self.dist(a, b)
 
     def dist_cs(self, a, b):
         if self.weights_on:
-            return self.dist_weighted(a,b)
-        else:
+            #return self.dist_weighted(a,b)
             return self.dist(a, b)
+        else:
+             return self.dist(a, b)
 
     def crossover_rate(self, t): # t jer se vremenom spusta
         return 0.5 + 0.5 * (self.trajanje_svijeta - t) / self.trajanje_svijeta
 
     def scale_factor(self):
-        return 0.5 + random.random() *0.5
+        return 0.25 *( 0.5 + random.random() *0.5)
 
     def create_dataset(self, dataset):
         if dataset == 'Iris': return Iris()
@@ -85,6 +88,9 @@ class Core:
            grupiranje = self.p.trenutna_generacija[najkrom].pridruzivanje()
            colormap = self.p.trenutna_generacija[najkrom].grupiranje()
            centri = self.p.trenutna_generacija[najkrom].aktivni_centri()
+
+           print centri
+           print colormap
 
            self.staro = grupiranje
            self.cycles +=1
@@ -116,6 +122,12 @@ class Kromosom:
                  for k in range(config.k_max)]   # za svaki centar klastera
             )
 
+        for ccluster in range(config.k_max):
+            if self.geni[ccluster] < 0:
+                self.geni[ccluster] = 0
+            elif self.geni[ccluster] > 1:
+                self.geni[ccluster] = 1
+
         provjereno_ispravno = False
         while not provjereno_ispravno:
             provjereno_ispravno = True
@@ -137,6 +149,7 @@ class Kromosom:
             else:
                 provjereno_ispravno = False
             if not provjereno_ispravno:
+                #print "nove"
                 tocaka = self.config.dataset.getRowNum()
                 po_grupi = tocaka // aktivnih
                 ostaci = tocaka % aktivnih
@@ -200,6 +213,7 @@ class Kromosom:
         ) / K
 
     def fitness_cs(self, particija=[]):
+        #return 0
         if not len(particija):
             particija1 = self.pridruzivanje()
             particija1 = [x for x in particija1 if x != []]
@@ -261,22 +275,25 @@ if __name__ == '__main__':
     f = open('log_'+str(time.time()) , 'w')
 
     for dts in ['Iris', 'Wine', 'Glass']:
-        for mcl in [2, 4, 8, 16]:
-            for dst in ["Cosine", "Mahalanobis", "Minkowski_2"]:
+        for mcl in [20, 4, 8, 16]:
+            for dst in ["Minkowski_2", "Cosine", "Mahalanobis"]:
                 for q in [2, 4, 8]:
                     for t in [2, 4, 8]:
                         confs = {
                                 'Dataset' : dts,
-                                'Number of generations' : 20,
-                                'Population size': 20,
+                                'Number of generations' : 2000,
+                                'Population size': 40,
                                 'Max clusters' : mcl,
                                 'Fitness method': 'db',
-                                'q' : q,
-                                't' : t,
-                                'Distance measure': dst
+                                'q' : 2,
+                                't' : 2,
+                                'Distance measure': dst,
+                                'Feature significance': False
                         }
 
                         c = Core(Config(confs))
+                        print c.p.config.dataset.getOptimalFitness(c.p.config)
+                        #exit()
 
                         f.write(str(confs) + "\n")
 
@@ -286,17 +303,10 @@ if __name__ == '__main__':
                                 f.write("\n" + str(i) + ": \t" + np.array_str(result.colormap, max_line_width = 10000) + "; ")
 
                             f.write(str(max(result.fitnessmap)).replace('.', ',') + '; ')
+                            f.flush()
 
                         # racunamo fitness optimalne particije
-                        tocke = c.config.dataset.data
-                        klasteri = c.config.dataset.params['ClusterMap']
-                        particija = [[] for x in range(len(set(klasteri)))]
-                        for i, t in enumerate(tocke):
-                           particija[klasteri[i] - 1].append(t)
 
-                        testni = Kromosom(c.config, [], True) # samo fitness koristimo, ne cijeli kromosom
-                        f.write("\n" + str(testni.fitness(particija)).replace('.', ',') + "\n\n")
-                        f.write("\n" + str(testni.fitness_cs(particija)).replace('.', ',') + "\n\n")
 
                         f.flush()
 

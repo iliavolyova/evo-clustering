@@ -1,5 +1,6 @@
 from __future__ import division
 import pyqtgraph.opengl as gl
+import itertools
 import numpy as np
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -10,6 +11,7 @@ class ScatterPlot():
         self.data = data
         self.w = MyGLView()
         self.w.opts['distance'] = 35
+
         self.w.show()
         self.w.setWindowTitle("3D Scatter Plot")
 
@@ -37,10 +39,13 @@ class ScatterPlot():
                                   * 10 for point in self.data])
 
         item = gl.GLScatterPlotItem(pos=positions, color=(1,1,1,1), size=0.5, pxMode=False)
+        item.setGLOptions('translucent')
         viewrepr = " ".join(str(v) for v in viewnum)
         self.w.views[viewrepr] = dimensions
         self.w.dataItems[viewrepr] = item
         self.w.addItem(item)
+
+
 
     def setVisibleCentroid(self, row, show):
         viewTrans, viewRepr = self.toBinDigitList(row)
@@ -91,12 +96,12 @@ class ScatterPlot():
             self.addView(trans, v)
 
     def initGrids(self):
-        x = gl.GLGridItem()
+        x = gl.GLGridItem(glOptions='opaque')
         x.translate(5, 0, 0)
         x.scale(0.5, 1, 1)
-        y = gl.GLGridItem()
+        y = gl.GLGridItem(glOptions='opaque')
         y.rotate(90, 0 , 1 ,0)
-        z = gl.GLGridItem()
+        z = gl.GLGridItem(glOptions='opaque')
         z.rotate(90, 1, 0, 0)
         z.translate(5, 0, 0)
         z.scale(0.5, 1, 1)
@@ -139,7 +144,32 @@ class MyGLView(gl.GLViewWidget):
         self.gridItems = []
         self.generations = 0
         self.centroidData = []
-        self.colors = {
+        self.colors = {}
+        for i, boja in enumerate(itertools.product([0.2, 0.6, 1], repeat=3)):
+            self.colors[i] = [boja[0], boja[1], boja[2], 1.0]
+
+        '''
+            0: np.array([0.0, 0.0, 1.0]),
+            1: np.array([0.1, 0.1, 1.1]),
+            2: np.array([0.2, 0.2, .2]),
+            3: np.array([0.3, 0.3, 0.3]),
+            4: np.array([0.4, 0.4, 0.4]),
+            5: np.array([0.5, 0.5, 0.5]),
+            6: np.array([0.6, 0.6, 0.6]),
+            7: np.array([0.7, 0.7, 0.7]),
+            8: np.array([0.8, 0.8, 0.8]),f
+            9: np.array([0.9, 0.9, 0.9]),
+            10: np.array([255, 0, 125]),
+            11: np.array([0, 255, 125]),
+            12: np.array([125, 255, 0]),
+            13: np.array([125, 0, 255]),
+            14: np.array([0, 125, 255]),
+            15: np.array([125, 125, 255]),
+            16: np.array([125, 255, 125]),
+            17: np.array([255, 125, 125]),
+            18: np.array([125, 255, 255]),
+            19: np.array([255, 125, 255]),
+            20: np.array([255, 255, 125])
             0: np.array([255, 0, 0]),
             1: np.array([0, 255, 0]),
             2: np.array([0, 0, 255]),
@@ -147,8 +177,10 @@ class MyGLView(gl.GLViewWidget):
             4: np.array([125, 125, 0]),
             5: np.array([125, 0, 125]),
             6: np.array([255, 0 , 255]),
-            7: np.array([0, 255, 255])
-        }
+            7: np.array([0, 255, 255]),
+            8: np.array([255, 255, 0]),
+            9: np.array([255, 125, 0]),
+            '''
 
     def setGenerationCount(self, gencount):
         self.generations = gencount
