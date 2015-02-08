@@ -92,6 +92,7 @@ class Dataset(object):
 class Iris(Dataset):
 
     def __init__(self):
+        super(Iris, self).__init__()
         weights = [0.7826, -0.4194, 0.9490, 0.9565]
         self.localfile = '../data/iris.data'
         Dataset.__init__(self)
@@ -100,6 +101,7 @@ class Iris(Dataset):
 class Wine(Dataset):
 
     def __init__(self):
+        super(Wine, self).__init__()
         self.localfile = '../data/wine.data'
         Dataset.__init__(self)
         Dataset.readFile(self, self.localfile, classCol=0)
@@ -107,6 +109,7 @@ class Wine(Dataset):
 class Cancer(Dataset):
 
     def __init__(self):
+        super(Cancer, self).__init__()
         self.localfile = '../data/breast-cancer-wisconsin.data'
         Dataset.__init__(self)
         Dataset.readFile(self, self.localfile)
@@ -114,12 +117,14 @@ class Cancer(Dataset):
 class Glass(Dataset):
 
     def __init__(self):
+        super(Glass, self).__init__()
         self.localfile = '../data/glass.data'
         Dataset.__init__(self)
         Dataset.readFile(self, self.localfile, classCol=10, ignoreCol=0)
 
 class Naive(Dataset):
     def __init__(self):
+        super(Naive, self).__init__()
         weights = [1, 1]
         tocke = [(36, 39), (20, 42), (26, 27), (23, 43), (32, 33), (24, 39), (36, 39), (23, 32), (36, 44), (24, 37),
              (26, 31), (27, 30), (37, 45), (37, 28), (24, 25), (29, 44), (29, 26), (31, 28), (32, 35), (36, 27),

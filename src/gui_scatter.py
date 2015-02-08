@@ -82,6 +82,14 @@ class ScatterPlot():
         self.w.clearData()
         self.editViews(0, [0, 1, 2])
 
+    def reinitPlot(self, data):
+        self.data = data
+        views = self.w.views
+        self.w.clearData()
+        for k, v in views.iteritems():
+            trans = [int(i) for i in k.split()]
+            self.addView(trans, v)
+
     def initGrids(self):
         x = gl.GLGridItem()
         x.translate(5, 0, 0)
