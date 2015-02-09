@@ -135,7 +135,7 @@ class MyGLView(gl.GLViewWidget):
 
     def __init__(self):
         super(MyGLView, self).__init__()
-        self.centerOnScreen()
+        self.moveToPosition()
         self.views = {}
         self.dataItems = {}
         self.centroids = {}
@@ -214,10 +214,9 @@ class MyGLView(gl.GLViewWidget):
                                     "x")
         self.renderText(0, 0, 13, "Generation: " + str(self.generations))
 
-    def centerOnScreen (self):
+    def moveToPosition (self):
         resolution = QDesktopWidget().screenGeometry()
-        self.move((resolution.width() / 2) - (self.frameSize().width() / 2),
-                  (resolution.height() / 2) - (self.frameSize().height() / 2))
+        self.move(resolution.width() - self.frameSize().width(), 0)
 
     def closeEvent(self, QCloseEvent):
         self.die.emit()

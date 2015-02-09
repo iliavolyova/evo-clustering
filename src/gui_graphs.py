@@ -24,6 +24,7 @@ class Graphs(pg.GraphicsWindow):
         self.setCentralItem(layout)
         self.resize(650, 250)
         self.setWindowTitle('Graphs')
+        self.moveToPosition()
         self.show()
         self.histoWidget = layout.addPlot(title="Cluster histogram")
         self.fitnessWidget = layout.addPlot(title="Fitness graph")
@@ -37,10 +38,10 @@ class Graphs(pg.GraphicsWindow):
         self.histogram = HistoPlot(self.histoWidget, 5)
         self.histogram.add_optimal(self.config.dataset.params)
 
-    def centerOnScreen (self):
+    def moveToPosition(self):
         resolution = QDesktopWidget().screenGeometry()
-        self.move((resolution.width() / 2) - (self.frameSize().width() / 2),
-                  (resolution.height() / 2) - (self.frameSize().height() / 2))
+        self.move(resolution.width() - self.frameSize().width(),
+                  resolution.height() - self.frameSize().height())
 
     def closeEvent(self, QCloseEvent):
         self.graphsdying.emit()
@@ -55,6 +56,8 @@ class FitnessPlot():
         if self.widget.legend is None:
             self.legendIsSet = False
             self.widget.addLegend(offset=(-1,1))
+        else:
+            self.legendIsSet = True
         self.optfit = optimalFitness
         self.optimal = self.widget.plot()
         self.redraw_optimal(initial_generations)
@@ -70,10 +73,10 @@ class FitnessPlot():
         y = np.empty(generations)
         y.fill(self.optfit)
         self.optimal.setData(x=self.x, y=y, pen=(255,0,0))
-        mockplotdata = pg.PlotDataItem(pen='r')
-        self.widget.legend.removeItem('optimal')
-        self.widget.legend.addItem(mockplotdata, 'optimal')
+
         if not self.legendIsSet:
+            mockplotdataopt = pg.PlotDataItem(pen='r')
+            self.widget.legend.addItem(mockplotdataopt, 'optimal')
             mockplotdata = pg.PlotDataItem(pen='b')
             self.widget.legend.addItem(mockplotdata, 'best')
             mockfilldata = pg.PlotDataItem(pen=(100, 100, 255))
@@ -95,6 +98,8 @@ class HistoPlot():
         if self.widget.legend is None:
             self.legendIsSet = False
             self.widget.addLegend(offset=(-1,1))
+        else:
+            self.legendIsSet = True
         self.widget.setLabel('left', 'Samples in cluster')
         self.widget.setLabel('bottom', 'Cluster')
         self.max_clusters = max_clusters
@@ -105,19 +110,19 @@ class HistoPlot():
         self.bins = np.arange(1, dataset_params['Classes'] + 1)
         data = dataset_params['ClusterMap']
         y = [data.count(i) for i in self.bins]
-        self.optimal = pg.BarGraphItem(x=self.bins, height=sorted(y, reverse=True), width=1, brush='r')
+        self.optimal = pg.BarGraphItem(x=self.bins, height=sorted(y, reverse=True), width=0.8, brush='r')
         self.widget.addItem(self.optimal)
-        mockplotdata = pg.PlotDataItem(pen='r')
-        self.widget.legend.removeItem('optimal')
-        self.widget.legend.addItem(mockplotdata, 'optimal')
+        if not self.legendIsSet:
+            mockplotdata = pg.PlotDataItem(pen='r')
+            self.widget.legend.addItem(mockplotdata, 'optimal')
 
     def add_current(self):
         if len(self.bins) < self.max_clusters:
             self.bins = np.arange(1, self.max_clusters + 1)
             y = [self.dataset_params['ClusterMap'].count(i) for i in self.bins]
             self.optimal.setOpts(height=y)
-        self.optimal.setOpts(x=self.bins-0.25, width=0.5)
-        self.current = pg.BarGraphItem(x=self.bins+0.25, height=np.zeros(len(self.bins)), width=0.5, brush='b', name='current clusters')
+        self.optimal.setOpts(x=self.bins-0.2, width=0.4)
+        self.current = pg.BarGraphItem(x=self.bins+0.2, height=np.zeros(len(self.bins)), width=0.4, brush='b', name='current clusters')
         self.widget.addItem(self.current)
 
         if not self.legendIsSet:
