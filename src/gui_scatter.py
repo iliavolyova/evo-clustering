@@ -45,8 +45,6 @@ class ScatterPlot():
         self.w.dataItems[viewrepr] = item
         self.w.addItem(item)
 
-
-
     def setVisibleCentroid(self, row, show):
         viewTrans, viewRepr = self.toBinDigitList(row)
         if viewRepr in self.w.centroids and not show:
