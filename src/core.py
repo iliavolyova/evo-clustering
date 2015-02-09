@@ -201,6 +201,7 @@ class Kromosom:
                 najbl = np.argmin([self.config.dist(c, t) for c in centri])
                 p[najbl].append(t)
             return p
+        
 
     def grupiranje(self):
         colormap = np.zeros(len(self.config.dataset.data), dtype=int)
