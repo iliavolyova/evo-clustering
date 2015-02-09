@@ -14,6 +14,8 @@ import FileDialog # zbog pyinstallera
 from Tkinter import *
 from tkFileDialog import *
 
+import random
+
 from sklearn import metrics
 
 class Worker(QtCore.QObject):
@@ -198,4 +200,5 @@ def main():
     app.exec_()
 
 if __name__ == "__main__":
+    random.seed(100)
     main()

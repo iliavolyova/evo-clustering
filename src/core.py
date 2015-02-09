@@ -170,20 +170,37 @@ class Kromosom:
         if len(self.geni) != config.k_max + config.k_max * config.n_dims:
             print("probl")
 
+        particija = self.pridruzivanje()
+        particija = [x for x in particija if len(x) > 1]
+        K = len(particija)
+        if K <= 1:
+            print 'uh oh'
+
     def centri_kromosoma(self, samo_aktivni = True):
         return [[self.geni[self.config.k_max + self.config.n_dims * i + dim] for dim in range(self.config.n_dims)]
                 for i in range(self.config.k_max) if (not samo_aktivni) or self.geni[i] > 0.5]
 
     def aktivnih_centara(self):
-        return sum([1 for centar in range(self.config.k_max) if self.geni[centar] >= 0.5])
+        return sum([1 for centar in range(self.config.k_max) if self.geni[centar] > 0.5])
 
     def pridruzivanje(self, ukljuci_neaktivne_centre = False):
-        centri = self.centri_kromosoma(samo_aktivni=not ukljuci_neaktivne_centre)
-        p = [[] for _ in centri]
-        for t in self.config.dataset.data:
-            najbl = np.argmin([self.config.dist(c, t) for c in centri])
-            p[najbl].append(t)
-        return p
+        if ukljuci_neaktivne_centre:
+            centri = self.centri_kromosoma(samo_aktivni=False)
+            #aktivni_centri = self.centri_kromosoma(samo_aktivni=True)
+            troll_tocka = [1000000 for dim in range(len(self.config.dataset.data[0]))]
+            centri = [c if self.geni[ic] > 0.5 else troll_tocka for ic, c in enumerate(centri)]
+            p = [[] for _ in centri]
+            for t in self.config.dataset.data:
+                najbl = np.argmin([self.config.dist(c, t) for c in centri])
+                p[najbl].append(t)
+            return p
+        else:
+            centri = self.centri_kromosoma()
+            p = [[] for _ in centri]
+            for t in self.config.dataset.data:
+                najbl = np.argmin([self.config.dist(c, t) for c in centri])
+                p[najbl].append(t)
+            return p
 
     def grupiranje(self):
         colormap = np.zeros(len(self.config.dataset.data), dtype=int)
@@ -196,9 +213,13 @@ class Kromosom:
     def fitness_db(self, particija=[]):
         if not particija:
            particija = self.pridruzivanje()
-
         particija = [x for x in particija if x != []]
+
         K = len(particija)
+
+        if K <= 1:
+            print 'uh oh'
+
         centri = [np.average(grupa, axis=0) for grupa in particija]
 
         #rasprsenja
@@ -253,6 +274,7 @@ class Populacija:
             self.trenutna_generacija.append(Kromosom(config))
 
     def probni_vektor(self, k, t):
+        print t
         fiksirani = self.trenutna_generacija.pop(k)
         izabrani = random.sample(self.trenutna_generacija, 3)
         m, i, j = izabrani[0], izabrani[1], izabrani[2]
