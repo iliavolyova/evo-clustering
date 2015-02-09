@@ -7,13 +7,13 @@ from PyQt4.QtGui import *
 
 class ScatterPlot():
 
-    def __init__(self, data):
+    def __init__(self, data, title='3D Scatter Plot', labels=True):
         self.data = data
-        self.w = MyGLView()
+        self.w = MyGLView(drawLabels=labels)
         self.w.opts['distance'] = 35
 
         self.w.show()
-        self.w.setWindowTitle("3D Scatter Plot")
+        self.w.setWindowTitle(title)
 
         self.initGrids()
 
@@ -80,10 +80,10 @@ class ScatterPlot():
         for key, item in self.w.dataItems.iteritems():
             item.setData(size=scaledSize)
 
-    def setData(self, data):
+    def setData(self, data, row=0, view=[0, 1, 2]):
         self.data = data
         self.w.clearData()
-        self.editViews(0, [0, 1, 2])
+        self.editViews(row, view)
 
     def reinitPlot(self, data):
         self.data = data
@@ -133,8 +133,9 @@ class ScatterPlot():
 class MyGLView(gl.GLViewWidget):
     die = pyqtSignal()
 
-    def __init__(self):
+    def __init__(self, drawLabels=True):
         super(MyGLView, self).__init__()
+        self.drawLabels = drawLabels
         self.moveToPosition()
         self.views = {}
         self.dataItems = {}
@@ -201,18 +202,19 @@ class MyGLView(gl.GLViewWidget):
 
     def paintGL(self, *args, **kwds):
         gl.GLViewWidget.paintGL(self, *args, **kwds)
-        for v in self.views:
-            vi = v.split(" ")
-            self.renderText(int(vi[0])*5, int(vi[1])*5, int(vi[2]) * 11, str(self.views[v]))
-        for c in self.centroids:
-            if len(self.centroidData):
-                ci = c.split(" ")
-                for i in range(len(self.centroidData)):
-                    self.renderText(int(ci[0]) * self.centroidData[i][0] * 10,
-                                    int(ci[1]) * self.centroidData[i][1] * 10,
-                                    int(ci[2]) * self.centroidData[i][2] * 10,
-                                    "x")
-        self.renderText(0, 0, 13, "Generation: " + str(self.generations))
+        if self.drawLabels:
+            for v in self.views:
+                vi = v.split(" ")
+                self.renderText(int(vi[0])*5, int(vi[1])*5, int(vi[2]) * 11, str(self.views[v]))
+            for c in self.centroids:
+                if len(self.centroidData):
+                    ci = c.split(" ")
+                    for i in range(len(self.centroidData)):
+                        self.renderText(int(ci[0]) * self.centroidData[i][0] * 10,
+                                        int(ci[1]) * self.centroidData[i][1] * 10,
+                                        int(ci[2]) * self.centroidData[i][2] * 10,
+                                        "x")
+            self.renderText(0, 0, 13, "Generation: " + str(self.generations))
 
     def moveToPosition (self):
         resolution = QDesktopWidget().screenGeometry()

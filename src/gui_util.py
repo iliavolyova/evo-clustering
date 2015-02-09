@@ -13,7 +13,7 @@ class AxesTable():
         for row in range(rows):
             for column in range(columns):
                 item = QtGui.QTableWidgetItem('')
-                if column == 1 or column == 2:
+                if column in [1, 2, 3]:
                     item.setCheckState(QtCore.Qt.Unchecked)
                     flags = ~QtCore.Qt.ItemIsEnabled
                     flags |= QtCore.Qt.ItemIsUserCheckable
@@ -33,9 +33,18 @@ class AxesTable():
                 if axis > max_dimension:
                     item.setText('')
                     return
-            if col == 2 and axes and self.table.item(row, 1):
-                self.main.plot.setVisibleCentroid(row, item.checkState())
-            if col == 1 and axes:
+
+            if col == 0 and axes:
+                self.main.plot.editViews(row, axes)
+                checkbox = self.table.item(row, 1)
+                checkbox.setCheckState(QtCore.Qt.Checked)
+                checkbox.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
+                checkbox_centroids = self.table.item(row, 2)
+                checkbox_centroids.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
+                checkbox_results = self.table.item(row, 3)
+                checkbox_results.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
+                self.main.plot.w.groupItems(self.main.config.dataset.params['ClusterMap'])
+            elif col == 1 and axes:
                 self.main.plot.setVisible(row, item.checkState(), axes)
                 checkbox_centroids = self.table.item(row, 2)
                 if item.checkState():
@@ -44,14 +53,11 @@ class AxesTable():
                     flags = ~QtCore.Qt.ItemIsEnabled
                     flags |= QtCore.Qt.ItemIsUserCheckable
                     checkbox_centroids.setFlags(flags)
-            if col == 0 and axes:
-                self.main.plot.editViews(row, axes)
-                checkbox = self.table.item(row, 1)
-                checkbox.setCheckState(QtCore.Qt.Checked)
-                checkbox.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
-                checkbox_centroids = self.table.item(row, 2)
-                checkbox_centroids.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
-                self.main.plot.w.groupItems(self.main.config.dataset.params['ClusterMap'])
+            elif col == 2 and axes and self.table.item(row, 1):
+                self.main.plot.setVisibleCentroid(row, item.checkState())
+            elif col == 3 and axes:
+                view = [int(i) for i in self.table.item(row, 0).text().split(' ')]
+                self.main.set_visible_results_plot(row, view, item.checkState())
         else:
             item.setText('')
 

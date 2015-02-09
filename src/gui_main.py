@@ -76,6 +76,7 @@ class MainWindow(QMainWindow):
         self.parameters.tree.sigTreeStateChanged.connect(self.change_params)
 
         self.config = Config(self.parameters.activeParams)
+        self.resultPlots = {}
 
         self.plot = gui_scatter.ScatterPlot(self.config.dataset.data)
         self.plot.w.die.connect(self.untick_show_plot)
@@ -173,6 +174,17 @@ class MainWindow(QMainWindow):
     #        f = asksaveasfile(parent=root, mode='w', filetypes=[('CSV', '*.csv')], defaultextension=".csv")
     #        f.write(text)
     #        f.close()
+
+    def set_visible_results_plot(self, row, view, state):
+        if state:
+            data = self.config.dataset.data
+            self.resultPlots[row] = gui_scatter.ScatterPlot(data, title="Optimal clusters for " + str(view), labels=False)
+            self.resultPlots[row].setData(data, row, view)
+            if 'ClusterMap' in self.config.dataset.params:
+                self.resultPlots[row].w.groupItems(self.config.dataset.params['ClusterMap'])
+        elif not state and row in self.resultPlots:
+            self.resultPlots[row].close()
+            del self.resultPlots[row]
 
     def finished_job(self):
         self.worker.running = False
