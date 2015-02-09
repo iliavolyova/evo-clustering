@@ -1,7 +1,5 @@
 from PyQt4 import QtCore, QtGui
 import re
-import numpy as np
-import pyqtgraph as pg
 import pyqtgraph.parametertree as paramtree
 
 class AxesTable():
@@ -71,6 +69,9 @@ class AxesTable():
             checkbox2.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
             self.table.setItem(row, col, item)
 
+    def untick_result(self, row):
+        checkbox_result = self.table.item(row, 3)
+        checkbox_result.setCheckState(QtCore.Qt.Unchecked)
 
 class ParamTree():
     def __init__(self):
@@ -101,7 +102,7 @@ class ParamTree():
                 {'name': 'Max clusters', 'type': 'int', 'value': self.activeParams['Max clusters']},
                 {'name': 'Population size', 'type': 'int', 'value': self.activeParams['Population size']},
                 {'name': 'Fitness method', 'type': 'list', 'values': {"db": "db", "cs": "cs"}, 'value': self.activeParams['Fitness method']},
-                {'name': 'q', 'type': 'int', 'value': self.activeParams['q']},
+                {'name': 'q', 'type': 'float', 'value': self.activeParams['q']},
                 {'name': 't', 'type': 'int', 'value': self.activeParams['t']},
                 {'name': 'Distance measure', 'type': 'list', 'values': {"Cosine": "Cosine", "Mahalanobis": "Mahalanobis", "Minkowski_2": "Minkowski_2"}, 'value': self.activeParams['Distance measure']},
                 {'name': 'Feature significance', 'type': 'bool', 'value': self.activeParams['Feature significance']}]

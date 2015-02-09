@@ -15,6 +15,7 @@ from Tkinter import *
 from tkFileDialog import *
 
 import random
+from functools import partial
 
 from sklearn import metrics
 
@@ -155,6 +156,9 @@ class MainWindow(QMainWindow):
         self.plot.w.close()
         self.graphs.w.close()
         del self.graphs
+        for k, v in self.resultPlots.iteritems():
+            v.w.close()
+        del self.resultPlots
         QCloseEvent.accept()
     
     def untick_show_plot(self):
@@ -184,8 +188,9 @@ class MainWindow(QMainWindow):
             self.resultPlots[row].setData(data, row, view)
             if 'ClusterMap' in self.config.dataset.params:
                 self.resultPlots[row].w.groupItems(self.config.dataset.params['ClusterMap'])
+            self.resultPlots[row].w.die.connect(partial(self.axestable.untick_result, row))
         elif not state and row in self.resultPlots:
-            self.resultPlots[row].close()
+            self.resultPlots[row].w.close()
             del self.resultPlots[row]
 
     def finished_job(self):
