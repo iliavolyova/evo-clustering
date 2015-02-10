@@ -1,7 +1,5 @@
 from PyQt4 import QtCore, QtGui
 import re
-import numpy as np
-import pyqtgraph as pg
 import pyqtgraph.parametertree as paramtree
 
 class AxesTable():
@@ -71,6 +69,9 @@ class AxesTable():
             checkbox2.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
             self.table.setItem(row, col, item)
 
+    def untick_result(self, row):
+        checkbox_result = self.table.item(row, 3)
+        checkbox_result.setCheckState(QtCore.Qt.Unchecked)
 
 class ParamTree():
     def __init__(self):

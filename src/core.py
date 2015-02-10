@@ -45,15 +45,13 @@ class Config:
 
     def dist_db(self, a, b):
         if self.weights_on:
-            #return self.dist_weighted(a,b)
-            return self.dist(a, b)
+            return self.dist_weighted(a,b)
         else:
             return self.dist(a, b)
 
     def dist_cs(self, a, b):
         if self.weights_on:
-            #return self.dist_weighted(a,b)
-            return self.dist(a, b)
+            return self.dist_weighted(a,b)
         else:
              return self.dist(a, b)
 
@@ -61,7 +59,7 @@ class Config:
         return 0.5 +  0.5 * (self.trajanje_svijeta - t) / self.trajanje_svijeta
 
     def scale_factor(self):
-        return ( 0.5 + random.random() *0.5)
+        return 0.25 *( 0.5 + random.random() *0.5)
 
     def create_dataset(self, dataset):
         if dataset == 'Iris': return Iris()
@@ -88,7 +86,7 @@ class Core:
            najkrom = np.argmax(fitnessi)
            grupiranje = self.p.trenutna_generacija[najkrom].pridruzivanje()
            colormap = self.p.trenutna_generacija[najkrom].grupiranje()
-           centri = self.p.trenutna_generacija[najkrom].centri_kromosoma(False)
+           centri = self.p.trenutna_generacija[najkrom].centri_kromosoma()
 
            print self.p.trenutna_generacija[najkrom].geni[0:self.config.k_max]
            print colormap
@@ -175,7 +173,6 @@ class Kromosom:
             else:
                 provjereno_ispravno = False
             if not provjereno_ispravno:
-                #print "nove"
                 tocaka = self.config.dataset.getRowNum()
                 po_grupi = tocaka // aktivnih
                 ostaci = tocaka % aktivnih
@@ -226,7 +223,6 @@ class Kromosom:
                 p[najbl].append(t)
             return p
 
-
     def grupiranje(self):
         colormap = np.zeros(len(self.config.dataset.data), dtype=int)
         centri = self.centri_kromosoma()
@@ -261,7 +257,6 @@ class Kromosom:
         ) / K
 
     def fitness_cs(self, particija=[]):
-        #return 0
         if not len(particija):
             particija1 = self.pridruzivanje()
             particija1 = [x for x in particija1 if x != []]
@@ -299,7 +294,6 @@ class Populacija:
             self.trenutna_generacija.append(Kromosom(config))
 
     def probni_vektor(self, k, t):
-        #print t
         fiksirani = self.trenutna_generacija.pop(k)
         izabrani = random.sample(self.trenutna_generacija, 3)
         m, i, j = izabrani[0], izabrani[1], izabrani[2]
