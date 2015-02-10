@@ -317,21 +317,10 @@ class Populacija:
         self.trenutna_generacija = iduca_generacija
 
 if __name__ == '__main__':
-    #f = open('log_'+str(time.time()) , 'w')
-    '''
-        for dts in ['Iris', 'Wine', 'Glass']:
 
-                for dst in ["Minkowski_2", "Cosine", "Mahalanobis"]:
-                    for q in [2, 4, 8]:
-                        for t in [2, 4, 8]:
-                        ,\
-                     [0 for _ in range(50)]+[1 for _ in  range(50)]+[1 for _ in  range(50)]
-    '''
-    min_diff = 10
     diffs = []
-    qq = 0
-    tt = 0
-    for dts in ['Iris', 'Glass', 'Wine']:
+
+    for dts in ['Iris']:
         for mcl in [10]:
             for dst in ["Minkowski_2", "Cosine"]: # , "Mahalanobis"
                 for fs in [True, False]:
@@ -380,11 +369,10 @@ if __name__ == '__main__':
                                             max(result.fitnessmap)
                                         ])
 
-                                    # racunamo fitness optimalne particije
+                                        if (i == c.config.trajanje_svijeta - 1):
+                                            diffs.append((metrics.adjusted_rand_score(result.colormap, optklasteri), confs))
 
 
                                     logger.flush()
     diffs.sort()
     print diffs
-
-    f.close()
