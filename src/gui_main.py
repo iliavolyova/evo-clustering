@@ -114,6 +114,8 @@ class MainWindow(QMainWindow):
                         c.setValue(value)
                 if key == 'Clusters':
                     self.parameters.addClusters(value)
+                if key == 'Feature weights':
+                    self.parameters.addFeatureSignificance(value)
         elif param.opts['name'] == 'Number of generations':
             self.graphs.w.fitness_plot.redraw_optimal(param.opts['value'])
             self.ui.evolutions_label.setText('0 of ' + str(self.parameters.activeParams['Number of generations']))

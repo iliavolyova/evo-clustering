@@ -135,3 +135,13 @@ class ParamTree():
             children.append({'name': k, 'value': v, 'type': 'int', 'readonly': True})
 
         clustersGroup.addChildren(children)
+
+    def addFeatureSignificance(self, values):
+        sigGroup = self.tree.child('Dataset stats').child('Feature significance')
+        sigGroup.clearChildren()
+        children = []
+
+        for k, v in enumerate(values):
+            children.append({'name': str(k+1), 'value': v, 'type': 'float', 'readonly': True})
+
+        sigGroup.addChildren(children)

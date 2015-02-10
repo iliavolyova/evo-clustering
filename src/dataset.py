@@ -20,7 +20,7 @@ class Dataset(object):
             if classCol is not None:
                 currClass = columns[classCol]
                 del columns[classCol]
-                if ignoreCol:
+                if ignoreCol is not None:
                     del columns[ignoreCol]
                 self.data.append([float(col) for col in columns])
 
@@ -119,9 +119,10 @@ class Glass(Dataset):
 
     def __init__(self):
         super(Glass, self).__init__()
+        weights = [-0.1642, 0.5030, -0.7447, 0.5988, 0.1515, -0.0100, 0.0007, 0.5751, -0.1879 ]
         self.localfile = '../data/glass.data'
         Dataset.__init__(self)
-        Dataset.readFile(self, self.localfile, classCol=10, ignoreCol=0)
+        Dataset.readFile(self, self.localfile, classCol=10, ignoreCol=0, weights=weights)
 
 class Naive(Dataset):
     def __init__(self):
