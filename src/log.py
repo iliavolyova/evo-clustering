@@ -1,4 +1,4 @@
-from core import Config
+#from core import Config
 
 class log:
     def __init__(self):
