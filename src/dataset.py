@@ -16,7 +16,7 @@ class Dataset(object):
         features = []
         for cols in [raw.strip().split(',') for raw in f]:
             features.append(cols)
-        # random.shuffle(features)
+        random.shuffle(features)
 
         for columns in features:
             if classCol is not None:
@@ -46,7 +46,7 @@ class Dataset(object):
         self.normalize()
 
     def readArray(self, arr, weights):
-        self.data = [[t[0], t[1]] for t in arr]
+        self.data = [[float(t[0]), float(t[1])] for t in arr]
         random.shuffle(self.data)
 
         self.params['Size'] = len(self.data)
@@ -58,11 +58,20 @@ class Dataset(object):
         self.normalize()
 
     def normalize(self):
-        preprocessing.scale(self.data)
 
-        najveci_broj = max([koord for tocka in self.data for koord in tocka])
-        print najveci_broj
-        self.data = [[dim / najveci_broj for dim in tocka] for tocka in self.data]
+        for dim in range(self.getColNum()):
+            min_d, max_d = min([t[dim] for t in self.data]), max([t[dim] for t in self.data])
+            for t in self.data:
+                t[dim] -= min_d
+                if max_d != min_d:
+                    t[dim] /= (max_d - min_d)
+
+        # self.data = preprocessing.scale(self.data)
+        # najmanji_broj = min([koord for tocka in self.data for koord in tocka])
+        # najveci_broj = max([koord for tocka in self.data for koord in tocka])
+        # self.data = [[(dim - najmanji_broj) / (najveci_broj - najmanji_broj) for dim in tocka] for tocka in self.data]
+
+        #print najveci_broj
 
     def getColNum(self):
         return len(self.data[0])

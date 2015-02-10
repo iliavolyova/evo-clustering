@@ -294,15 +294,15 @@ class Populacija:
             self.trenutna_generacija.append(Kromosom(config))
 
     def probni_vektor(self, k, t):
-        fiksirani = self.trenutna_generacija.pop(k)
-        izabrani = random.sample(self.trenutna_generacija, 3)
-        m, i, j = izabrani[0], izabrani[1], izabrani[2]
-        assert isinstance(i, Kromosom)
-        self.trenutna_generacija.insert(k, fiksirani) # vracamo privremeno izbaceni element k
         if random.random() < self.config.crossover_rate(t):
+            fiksirani = self.trenutna_generacija.pop(k)
+            izabrani = random.sample(self.trenutna_generacija, 3)
+            m, i, j = izabrani[0], izabrani[1], izabrani[2]
+            assert isinstance(i, Kromosom)
+            self.trenutna_generacija.insert(k, fiksirani) # vracamo privremeno izbaceni element k
             return Kromosom(self.config, np.add(m.geni, np.multiply(self.config.scale_factor(), np.subtract(i.geni, j.geni))))
         else:
-            return fiksirani
+            return self.trenutna_generacija[k]
 
     def evoluiraj(self, t):
         iduca_generacija = []
@@ -329,17 +329,18 @@ if __name__ == '__main__':
     diffs = []
     qq = 0
     tt = 0
-    for dts in ['Iris']:
-        for part in [[0 for _ in range(50)]+[1 for _ in range(100)] ]:
+    for dts in ['Naive']:
+        for part in [[0 for _ in range(33)]+[1 for _ in range(67)],\
+                     [0 for _ in range(33)]+[1 for _ in  range(34)]+[2 for _ in  range(33)] ]:
             for dst in ["Minkowski_2"]:
-                for q in [1, 1.2, 1.6, 1.8, 2, 3, 4, 5, 6, 7]:
-                    for t in [1, 1.2, 1.6, 1.8, 2, 3, 4, 5, 6, 7]:
+                for q in [2]:
+                    for t in [2]:
                         confs = {
                                 'Dataset' : dts,
                                 'Number of generations' : 200,
                                 'Population size': 40,
                                 'Max clusters' : 20,
-                                'Fitness method': 'db',
+                                'Fitness method': 'cs',
                                 'q' : q,
                                 't' : t,
                                 'Distance measure': dst,
@@ -349,12 +350,15 @@ if __name__ == '__main__':
                         print confs
 
                         c = Core(Config(confs))
-                        fopt = c.p.config.dataset.getOptimalFitness(c.p.config)
+                        #fopt = c.p.config.dataset.getOptimalFitness(c.p.config)
                         fpar = c.p.config.dataset.getFitnessOf(c.p.config, part)
 
 
-                        print "opt: ", fopt
+
                         print "part: ", part, '\n', fpar
+
+                        continue
+                        print "opt: ", fopt
 
                         diffs.append((math.fabs(fopt - fpar) / math.fabs(fopt), q, t))
 
