@@ -1,4 +1,4 @@
-# from core import Config
+#from core import Config
 
 class log:
     def __init__(self):
@@ -33,7 +33,7 @@ class log:
         self.info_cols_len = n
 
     def set_header(self, confs):
-        self.head = str(confs.k_max) + ';' + str(confs.weights_on) + ';' + str(confs.trajanje_svijeta) + ';' + \
+        self.head = str(confs.k_max) + ';' + str(confs.velicina_populacije) + ';' + str(confs.trajanje_svijeta) + ';' + \
                     str(confs.fitness_metoda) + ';' + str(confs.dist_metoda) + ';' + str(confs.db_param_q) + ';' + \
                     str(confs.db_param_t)
 
