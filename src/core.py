@@ -320,59 +320,65 @@ if __name__ == '__main__':
 
     diffs = []
 
+    preskoci = 2
+
     for dts in ['Iris']:
         for mcl in [10]:
             for dst in ["Minkowski_2", "Cosine"]: # , "Mahalanobis"
                 for fs in [True, False]:
                     for fm in ['db', 'cs']:
-                        if fm == 'db':
-                            for t in [1, 2, 4]:
-                                for q in [1, 2, 4]:
-                                    if fm == 'cs' and (t != 1 or q != 1):
-                                        continue # ima i uvlacenje losih strana
-                                    confs = {
-                                            'Dataset' : dts,
-                                            'Number of generations' : 30,
-                                            'Population size': 40,
-                                            'Max clusters' : mcl,
-                                            'Fitness method': fm,
-                                            'q' : q,
-                                            't' : t,
-                                            'Distance measure': dst,
-                                            'Feature significance': False
-                                    }
+                        for t in [1, 2, 4]:
+                            for q in [1, 2, 4]:
+                                if fm == 'cs' and (t != 1 or q != 1):
+                                    continue # ima i uvlacenje losih strana
 
-                                    print confs
+                                if preskoci > 0:
+                                    preskoci -= 1
+                                    continue
 
-                                    fname = "log_acde_" + confs['Dataset'] + "_" + confs['Distance measure'] + \
-                                    ("_Weights_" if confs['Feature significance'] else "_noWeights_") + \
-                                    confs['Fitness method'] + \
-                                    ('_' + str(confs['q']) + '_' + str(confs['t']) if confs['Fitness method'] == 'db' else "")
+                                confs = {
+                                        'Dataset' : dts,
+                                        'Number of generations' : 30,
+                                        'Population size': 40,
+                                        'Max clusters' : mcl,
+                                        'Fitness method': fm,
+                                        'q' : q,
+                                        't' : t,
+                                        'Distance measure': dst,
+                                        'Feature significance': fs
+                                }
 
-                                    c = Core(Config(confs))
+                                print confs
 
-                                    logger = log.log()
-                                    logger.set_file(fname)
-                                    logger.set_header(c.config)
+                                fname = "log_acde_" + confs['Dataset'] + "_" + confs['Distance measure'] + \
+                                ("_Weights_" if confs['Feature significance'] else "_noWeights_") + \
+                                confs['Fitness method'] + \
+                                ('_' + str(confs['q']) + '_' + str(confs['t']) if confs['Fitness method'] == 'db' else "")
 
-                                    optklasteri = c.config.dataset.params['ClusterMap']
+                                c = Core(Config(confs))
 
-                                    for i in range(c.config.trajanje_svijeta):
-                                        result = c.cycle()
-                                        logger.push_colormap(result.colormap)
-                                        logger.push_measures([
-                                            metrics.adjusted_rand_score(result.colormap, optklasteri),
-                                            metrics.adjusted_mutual_info_score(result.colormap, optklasteri),
-                                            metrics.homogeneity_score(result.colormap, optklasteri),
-                                            metrics.completeness_score(result.colormap, optklasteri),
-                                            metrics.v_measure_score(result.colormap, optklasteri),
-                                            max(result.fitnessmap)
-                                        ])
+                                logger = log.log()
+                                logger.set_file(fname)
+                                logger.set_header(c.config)
 
-                                        if (i == c.config.trajanje_svijeta - 1):
-                                            diffs.append((metrics.adjusted_rand_score(result.colormap, optklasteri), confs))
+                                optklasteri = c.config.dataset.params['ClusterMap']
+
+                                for i in range(c.config.trajanje_svijeta):
+                                    result = c.cycle()
+                                    logger.push_colormap(result.colormap)
+                                    logger.push_measures([
+                                        metrics.adjusted_rand_score(result.colormap, optklasteri),
+                                        metrics.adjusted_mutual_info_score(result.colormap, optklasteri),
+                                        metrics.homogeneity_score(result.colormap, optklasteri),
+                                        metrics.completeness_score(result.colormap, optklasteri),
+                                        metrics.v_measure_score(result.colormap, optklasteri),
+                                        max(result.fitnessmap)
+                                    ])
+
+                                    if (i == c.config.trajanje_svijeta - 1):
+                                        diffs.append((metrics.adjusted_rand_score(result.colormap, optklasteri), confs))
 
 
-                                    logger.flush()
+                                logger.flush()
     diffs.sort()
     print diffs
