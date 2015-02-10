@@ -6,6 +6,8 @@ import random
 import math
 from scipy import spatial
 import time
+import log
+from sklearn import metrics
 from sklearn import preprocessing
 
 from dataset import *
@@ -315,10 +317,10 @@ class Populacija:
         self.trenutna_generacija = iduca_generacija
 
 if __name__ == '__main__':
-    f = open('log_'+str(time.time()) , 'w')
+    #f = open('log_'+str(time.time()) , 'w')
     '''
         for dts in ['Iris', 'Wine', 'Glass']:
-            for mcl in [20, 4, 8, 16]:
+
                 for dst in ["Minkowski_2", "Cosine", "Mahalanobis"]:
                     for q in [2, 4, 8]:
                         for t in [2, 4, 8]:
@@ -329,61 +331,59 @@ if __name__ == '__main__':
     diffs = []
     qq = 0
     tt = 0
-    for dts in ['Naive']:
-        for part in [[0 for _ in range(33)]+[1 for _ in range(67)],\
-                     [0 for _ in range(33)]+[1 for _ in  range(34)]+[2 for _ in  range(33)] ]:
-            for dst in ["Minkowski_2"]:
-                for q in [2]:
-                    for t in [2]:
-                        confs = {
-                                'Dataset' : dts,
-                                'Number of generations' : 200,
-                                'Population size': 40,
-                                'Max clusters' : 20,
-                                'Fitness method': 'cs',
-                                'q' : q,
-                                't' : t,
-                                'Distance measure': dst,
-                                'Feature significance': False
-                        }
+    for dts in ['Iris', 'Glass', 'Wine']:
+        for mcl in [10]:
+            for dst in ["Minkowski_2", "Cosine"]: # , "Mahalanobis"
+                for fs in [True, False]:
+                    for fm in ['db', 'cs']:
+                        if fm == 'db':
+                            for t in [1, 2, 4]:
+                                for q in [1, 2, 4]:
+                                    if fm == 'cs' and (t != 1 or q != 1):
+                                        continue # ima i uvlacenje losih strana
+                                    confs = {
+                                            'Dataset' : dts,
+                                            'Number of generations' : 30,
+                                            'Population size': 40,
+                                            'Max clusters' : mcl,
+                                            'Fitness method': fm,
+                                            'q' : q,
+                                            't' : t,
+                                            'Distance measure': dst,
+                                            'Feature significance': False
+                                    }
 
-                        print confs
+                                    print confs
 
-                        c = Core(Config(confs))
-                        #fopt = c.p.config.dataset.getOptimalFitness(c.p.config)
-                        fpar = c.p.config.dataset.getFitnessOf(c.p.config, part)
+                                    fname = "log_acde_" + confs['Dataset'] + "_" + confs['Distance measure'] + \
+                                    ("_Weights_" if confs['Feature significance'] else "_noWeights_") + \
+                                    confs['Fitness method'] + \
+                                    ('_' + str(confs['q']) + '_' + str(confs['t']) if confs['Fitness method'] == 'db' else "")
 
+                                    c = Core(Config(confs))
 
+                                    logger = log.log()
+                                    logger.set_file(fname)
+                                    logger.set_header(c.config)
 
-                        print "part: ", part, '\n', fpar
+                                    optklasteri = c.config.dataset.params['ClusterMap']
 
-                        continue
-                        print "opt: ", fopt
+                                    for i in range(c.config.trajanje_svijeta):
+                                        result = c.cycle()
+                                        logger.push_colormap(result.colormap)
+                                        logger.push_measures([
+                                            metrics.adjusted_rand_score(result.colormap, optklasteri),
+                                            metrics.adjusted_mutual_info_score(result.colormap, optklasteri),
+                                            metrics.homogeneity_score(result.colormap, optklasteri),
+                                            metrics.completeness_score(result.colormap, optklasteri),
+                                            metrics.v_measure_score(result.colormap, optklasteri),
+                                            max(result.fitnessmap)
+                                        ])
 
-                        diffs.append((math.fabs(fopt - fpar) / math.fabs(fopt), q, t))
-
-                        if fpar < fopt:
-                            print "JAO\nJAO"
-                            exit()
-
-                        continue
-                        #exit()
-
-                        f.write(str(confs) + "\n")
-
-                        for i in range(c.config.trajanje_svijeta):
-                            result = c.cycle()
-                            if (i == c.config.trajanje_svijeta - 1):
-                                f.write("\n" + str(i) + ": \t" + np.array_str(result.colormap, max_line_width = 10000) + "; ")
-
-                            f.write(str(max(result.fitnessmap)).replace('.', ',') + '; ')
-                            f.flush()
-
-                        # racunamo fitness optimalne particije
+                                    # racunamo fitness optimalne particije
 
 
-                        f.flush()
-
+                                    logger.flush()
     diffs.sort()
     print diffs
 
