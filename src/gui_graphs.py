@@ -35,7 +35,7 @@ class Graphs(pg.GraphicsWindow):
         else:
             optimalFitness = 0
         self.fitness_plot = FitnessPlot(self.fitnessWidget, optimalFitness, parameters.activeParams['Number of generations'])
-        self.histogram = HistoPlot(self.histoWidget, 5)
+        self.histogram = HistoPlot(self.histoWidget, parameters.activeParams['Max clusters'])
         self.histogram.add_optimal(self.config.dataset.params)
 
     def moveToPosition(self):

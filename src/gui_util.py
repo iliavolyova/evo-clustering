@@ -102,7 +102,7 @@ class ParamTree():
                 {'name': 'Max clusters', 'type': 'int', 'value': self.activeParams['Max clusters']},
                 {'name': 'Population size', 'type': 'int', 'value': self.activeParams['Population size']},
                 {'name': 'Fitness method', 'type': 'list', 'values': {"db": "db", "cs": "cs"}, 'value': self.activeParams['Fitness method']},
-                {'name': 'q', 'type': 'float', 'value': self.activeParams['q']},
+                {'name': 'q', 'type': 'int', 'value': self.activeParams['q']},
                 {'name': 't', 'type': 'int', 'value': self.activeParams['t']},
                 {'name': 'Distance measure', 'type': 'list', 'values': {"Cosine": "Cosine", "Mahalanobis": "Mahalanobis", "Minkowski_2": "Minkowski_2"}, 'value': self.activeParams['Distance measure']},
                 {'name': 'Feature significance', 'type': 'bool', 'value': self.activeParams['Feature significance']}]
