@@ -6,6 +6,7 @@ import random
 import math
 from scipy import spatial
 import time
+from sklearn import preprocessing
 
 from dataset import *
 
@@ -87,6 +88,9 @@ class Core:
            colormap = self.p.trenutna_generacija[najkrom].grupiranje()
            centri = self.p.trenutna_generacija[najkrom].centri_kromosoma()
 
+           print self.p.trenutna_generacija[najkrom].geni[0:self.config.k_max]
+           print colormap
+
            self.staro = grupiranje
            self.cycles +=1
 
@@ -100,6 +104,9 @@ class CycleResult():
 
 class Kromosom:
     geni = []
+
+    def koord_centra(self, n):
+        return [self.geni[self.config.k_max + self.config.n_dims * n + d] for d in range(self.config.n_dims)]
 
     def __init__(self, config, g=[], nepravi=False):
         self.config = config
@@ -123,13 +130,33 @@ class Kromosom:
             elif self.geni[ccluster] > 1:
                 self.geni[ccluster] = 1
 
+            centar = self.koord_centra(ccluster)
+            if min(centar) >= 0 and max(centar) <= 1:
+                continue
+
+            centar_kvadranta = np.array([0.5 for _ in range(self.config.n_dims)])
+            razlika = np.subtract(np.array(centar), centar_kvadranta)
+            norma = np.linalg.norm(razlika) * 2
+            razlika /= norma
+            razlika += centar_kvadranta
+
+            for d in range(self.config.n_dims):
+                self.geni[self.config.k_max + self.config.n_dims * ccluster + d] = razlika[d]
+
         provjereno_ispravno = False
         while not provjereno_ispravno:
+
+            for ccluster in range(config.k_max):
+                if self.geni[ccluster] < 0:
+                    self.geni[ccluster] = random.random() * 0.4 + 0.05
+                elif self.geni[ccluster] > 1:
+                    self.geni[ccluster] = 1 - (random.random() * 0.4 + 0.05)
+
             provjereno_ispravno = True
             # sve odavde do kraja funkcije problematicno
             aktivnih = self.aktivnih_centara()
             if aktivnih < 2:
-                for ispravak in random.sample(range(config.k_max), 2):
+                for ispravak in random.sample(range(config.k_max), int(2 + random.random() * (config.k_max - 2)) ):
                     self.geni[ispravak] = 0.5 + 0.5 * random.random()
                 aktivnih = self.aktivnih_centara()
 
@@ -141,7 +168,7 @@ class Kromosom:
                 # gasimo neispravne, dovoljno je ispravnih
                 for i, gr in enumerate(particija):
                     if len(gr) < 2:
-                        self.geni[i] = 0.4 # 1 - self.geni[i]
+                        self.geni[i] = random.random() * 0.4 + 0.05
                 provjereno_ispravno = True
             else:
                 provjereno_ispravno = False
@@ -267,15 +294,15 @@ class Populacija:
             self.trenutna_generacija.append(Kromosom(config))
 
     def probni_vektor(self, k, t):
-        fiksirani = self.trenutna_generacija.pop(k)
-        izabrani = random.sample(self.trenutna_generacija, 3)
-        m, i, j = izabrani[0], izabrani[1], izabrani[2]
-        assert isinstance(i, Kromosom)
-        self.trenutna_generacija.insert(k, fiksirani) # vracamo privremeno izbaceni element k
         if random.random() < self.config.crossover_rate(t):
+            fiksirani = self.trenutna_generacija.pop(k)
+            izabrani = random.sample(self.trenutna_generacija, 3)
+            m, i, j = izabrani[0], izabrani[1], izabrani[2]
+            assert isinstance(i, Kromosom)
+            self.trenutna_generacija.insert(k, fiksirani) # vracamo privremeno izbaceni element k
             return Kromosom(self.config, np.add(m.geni, np.multiply(self.config.scale_factor(), np.subtract(i.geni, j.geni))))
         else:
-            return fiksirani
+            return self.trenutna_generacija[k]
 
     def evoluiraj(self, t):
         iduca_generacija = []
@@ -289,25 +316,58 @@ class Populacija:
 
 if __name__ == '__main__':
     f = open('log_'+str(time.time()) , 'w')
-
-    for dts in ['Iris', 'Wine', 'Glass']:
-        for mcl in [20, 4, 8, 16]:
-            for dst in ["Minkowski_2", "Cosine", "Mahalanobis"]:
-                for q in [2, 4, 8]:
-                    for t in [2, 4, 8]:
+    '''
+        for dts in ['Iris', 'Wine', 'Glass']:
+            for mcl in [20, 4, 8, 16]:
+                for dst in ["Minkowski_2", "Cosine", "Mahalanobis"]:
+                    for q in [2, 4, 8]:
+                        for t in [2, 4, 8]:
+                        ,\
+                     [0 for _ in range(50)]+[1 for _ in  range(50)]+[1 for _ in  range(50)]
+    '''
+    min_diff = 10
+    diffs = []
+    qq = 0
+    tt = 0
+    for dts in ['Naive']:
+        for part in [[0 for _ in range(33)]+[1 for _ in range(67)],\
+                     [0 for _ in range(33)]+[1 for _ in  range(34)]+[2 for _ in  range(33)] ]:
+            for dst in ["Minkowski_2"]:
+                for q in [2]:
+                    for t in [2]:
                         confs = {
                                 'Dataset' : dts,
-                                'Number of generations' : 2000,
+                                'Number of generations' : 200,
                                 'Population size': 40,
-                                'Max clusters' : mcl,
-                                'Fitness method': 'db',
-                                'q' : 2,
-                                't' : 2,
+                                'Max clusters' : 20,
+                                'Fitness method': 'cs',
+                                'q' : q,
+                                't' : t,
                                 'Distance measure': dst,
                                 'Feature significance': False
                         }
 
+                        print confs
+
                         c = Core(Config(confs))
+                        #fopt = c.p.config.dataset.getOptimalFitness(c.p.config)
+                        fpar = c.p.config.dataset.getFitnessOf(c.p.config, part)
+
+
+
+                        print "part: ", part, '\n', fpar
+
+                        continue
+                        print "opt: ", fopt
+
+                        diffs.append((math.fabs(fopt - fpar) / math.fabs(fopt), q, t))
+
+                        if fpar < fopt:
+                            print "JAO\nJAO"
+                            exit()
+
+                        continue
+                        #exit()
 
                         f.write(str(confs) + "\n")
 
@@ -323,5 +383,8 @@ if __name__ == '__main__':
 
 
                         f.flush()
+
+    diffs.sort()
+    print diffs
 
     f.close()

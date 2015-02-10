@@ -2,6 +2,8 @@ from __future__ import division
 import core
 import random
 
+from sklearn import preprocessing
+
 class Dataset(object):
     def __init__(self):
         self.data = []
@@ -44,7 +46,7 @@ class Dataset(object):
         self.normalize()
 
     def readArray(self, arr, weights):
-        self.data = [[t[0], t[1]] for t in arr]
+        self.data = [[float(t[0]), float(t[1])] for t in arr]
         random.shuffle(self.data)
 
         self.params['Size'] = len(self.data)
@@ -56,6 +58,7 @@ class Dataset(object):
         self.normalize()
 
     def normalize(self):
+
         for dim in range(self.getColNum()):
             min_d, max_d = min([t[dim] for t in self.data]), max([t[dim] for t in self.data])
             for t in self.data:
@@ -63,18 +66,29 @@ class Dataset(object):
                 if max_d != min_d:
                     t[dim] /= (max_d - min_d)
 
+        # self.data = preprocessing.scale(self.data)
+        # najmanji_broj = min([koord for tocka in self.data for koord in tocka])
+        # najveci_broj = max([koord for tocka in self.data for koord in tocka])
+        # self.data = [[(dim - najmanji_broj) / (najveci_broj - najmanji_broj) for dim in tocka] for tocka in self.data]
+
+        #print najveci_broj
+
     def getColNum(self):
         return len(self.data[0])
 
     def getRowNum(self):
         return len(self.data)
 
-    def getOptimalFitness(self, config):
-        particija = [[] for x in range(len(set(self.params['ClusterMap'])))]
+    # colormap ovdje mora sadrzavati sve brojeve od 0 do max(colormap)
+    def getFitnessOf(self, config, colormap):
+        particija = [[] for x in range(len(set(colormap)))]
         for i, t in enumerate(self.data):
-           particija[self.params['ClusterMap'][i] - 1].append(t)
+           particija[colormap[i] - 1].append(t)
         testni = core.Kromosom(config, [], True)
         return testni.fitness(particija)
+
+    def getOptimalFitness(self, config):
+        return self.getFitnessOf(config, self.params['ClusterMap'])
 
     def toIntList(self, classes):
         class_map = {}
