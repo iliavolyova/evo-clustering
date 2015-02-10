@@ -2,6 +2,8 @@ from __future__ import division
 import core
 import random
 
+from sklearn import preprocessing
+
 class Dataset(object):
     def __init__(self):
         self.data = []
@@ -14,7 +16,7 @@ class Dataset(object):
         features = []
         for cols in [raw.strip().split(',') for raw in f]:
             features.append(cols)
-        random.shuffle(features)
+        # random.shuffle(features)
 
         for columns in features:
             if classCol is not None:
@@ -56,12 +58,11 @@ class Dataset(object):
         self.normalize()
 
     def normalize(self):
-        for dim in range(self.getColNum()):
-            min_d, max_d = min([t[dim] for t in self.data]), max([t[dim] for t in self.data])
-            for t in self.data:
-                t[dim] -= min_d
-                if max_d != min_d:
-                    t[dim] /= (max_d - min_d)
+        preprocessing.scale(self.data)
+
+        najveci_broj = max([koord for tocka in self.data for koord in tocka])
+        print najveci_broj
+        self.data = [[dim / najveci_broj for dim in tocka] for tocka in self.data]
 
     def getColNum(self):
         return len(self.data[0])
@@ -69,12 +70,16 @@ class Dataset(object):
     def getRowNum(self):
         return len(self.data)
 
-    def getOptimalFitness(self, config):
-        particija = [[] for x in range(len(set(self.params['ClusterMap'])))]
+    # colormap ovdje mora sadrzavati sve brojeve od 0 do max(colormap)
+    def getFitnessOf(self, config, colormap):
+        particija = [[] for x in range(len(set(colormap)))]
         for i, t in enumerate(self.data):
-           particija[self.params['ClusterMap'][i] - 1].append(t)
+           particija[colormap[i] - 1].append(t)
         testni = core.Kromosom(config, [], True)
         return testni.fitness(particija)
+
+    def getOptimalFitness(self, config):
+        return self.getFitnessOf(config, self.params['ClusterMap'])
 
     def toIntList(self, classes):
         class_map = {}
