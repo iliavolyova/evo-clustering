@@ -45,6 +45,7 @@ class Config:
         elif self.dist_metoda == 'Cosine':
             return spatial.distance.cosine(a, b) if a[0] <= 1 and a[1] <= 1 and b[1] <= 1 and b[0] <= 1 else 100
 
+
     def dist_db(self, a, b):
         if self.weights_on:
             return self.dist_weighted(a,b)
