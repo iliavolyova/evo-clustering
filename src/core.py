@@ -159,6 +159,7 @@ class Kromosom:
             aktivnih = self.aktivnih_centara()
             if aktivnih < 2:
                 for ispravak in random.sample(range(config.k_max), int(2 + random.random() * (config.k_max - 2)) ):
+                #for ispravak in random.sample(range(config.k_max), 2 ):
                     self.geni[ispravak] = 0.5 + 0.5 * random.random()
                 aktivnih = self.aktivnih_centara()
 
@@ -169,7 +170,7 @@ class Kromosom:
             if ispravnih >= 2:
                 # gasimo neispravne, dovoljno je ispravnih
                 for i, gr in enumerate(particija):
-                    if len(gr) < 2:
+                    if len(gr) < 2 and self.geni[i] > 0:
                         self.geni[i] = random.random() * 0.4 + 0.05
                 provjereno_ispravno = True
             else:
@@ -320,11 +321,11 @@ if __name__ == '__main__':
 
     diffs = []
 
-    preskoci = 2
+    preskoci = 20
 
     for dts in ['Iris']:
         for mcl in [10]:
-            for dst in ["Minkowski_2", "Cosine"]: # , "Mahalanobis"
+            for dst in ["Minkowski_2", "Mahalanobis"]: # , "Cosine"
                 for fs in [True, False]:
                     for fm in ['db', 'cs']:
                         for t in [1, 2, 4]:
