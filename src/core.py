@@ -35,7 +35,7 @@ class Config:
         elif self.dist_metoda == 'Mahalanobis':
             return spatial.distance.mahalanobis(a, b, self.inv_cov)
         elif self.dist_metoda == 'Cosine':
-            return spatial.distance.cosine(a, b)
+            return spatial.distance.cosine(a, b) if a[0] <= 1 and a[1] <= 1 and b[1] <= 1 and b[0] <= 1 else 100
 
     def dist_weighted(self, a, b):
         if self.dist_metoda == 'Minkowski_2':
@@ -43,7 +43,7 @@ class Config:
         elif self.dist_metoda == 'Mahalanobis':
             return spatial.distance.mahalanobis(a, b, self.inv_cov)
         elif self.dist_metoda == 'Cosine':
-            return spatial.distance.cosine(a, b)
+            return spatial.distance.cosine(a, b) if a[0] <= 1 and a[1] <= 1 and b[1] <= 1 and b[0] <= 1 else 100
 
     def dist_db(self, a, b):
         if self.weights_on:
@@ -166,7 +166,7 @@ class Kromosom:
             particija = self.pridruzivanje(ukljuci_neaktivne_centre=True)
             # particija_neprazno = [p for p in particija if p != []]
 
-            ispravnih = sum([len(grupa) >= 2 for grupa in particija])
+            ispravnih = sum([len(grupa) >= 2 and self.geni[ig] > 0.5 for ig, grupa in enumerate(particija)])
             if ispravnih >= 2:
                 # gasimo neispravne, dovoljno je ispravnih
                 for i, gr in enumerate(particija):
