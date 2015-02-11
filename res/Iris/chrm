@@ -1,0 +1,1 @@
+: 40, 'Fitness method': 'db', 't': 4, 'Feature significance': True, 'Number of generations': 30, 'Distance measure': 'Mahalanobis', 'Dataset': 'Iris'}), (0.5342562318840579, {'q': 4, 'Max clusters': 10, 'Population size': 40, 'Fitness method': 'db', 't': 1, 'Feature significance': True, 'Number of generations': 30, 'Distance measure': 'Mahalanobis', 'Dataset': 'Iris'})]
