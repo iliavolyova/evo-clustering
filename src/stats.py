@@ -52,7 +52,8 @@ class Stats():
                 for f in filenames:
                     run_paths.append(os.path.join(basepath, f))
         else:
-            self.table.clear()
+            self.table.clearContents()
+            self.clearLabels()
             return
 
         log = logger.Log()
@@ -81,7 +82,7 @@ class Stats():
         self.populate_table()
 
     def populate_table(self):
-        self.table.clear()
+        self.table.clearContents()
         self.table.setRowCount(len(self.runs)+1)
         cls_sum=0
         dist_sum=[]
@@ -158,3 +159,8 @@ class Stats():
         self.table.setColumnWidth(3, 65)
         self.table.setColumnWidth(4, 65)
         self.table.setColumnWidth(5, 60)
+
+    def clearLabels(self):
+        self.window.label_classes.setText('')
+        self.window.label_dataset.setText('')
+        self.window.label_distribution.setText('')
