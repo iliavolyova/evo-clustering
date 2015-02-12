@@ -51,6 +51,9 @@ class Stats():
             for dirname, dirnames, filenames in os.walk(basepath):
                 for f in filenames:
                     run_paths.append(os.path.join(basepath, f))
+        else:
+            self.table.clear()
+            return
 
         log = logger.Log()
         for path in run_paths:
@@ -78,6 +81,7 @@ class Stats():
         self.populate_table()
 
     def populate_table(self):
+        self.table.clear()
         self.table.setRowCount(len(self.runs)+1)
         cls_sum=0
         dist_sum=[]
@@ -126,8 +130,9 @@ class Stats():
         avg_dist = []
         for index, val in enumerate(dist_sum):
             avg_dist.append(dist_sum[index] / dist_cnt[index])
+        avg_dist_str = ["%.1f" % t for t in avg_dist]
 
-        for index, val in enumerate(['Average', avg_clsnum, str(avg_dist)]):
+        for index, val in enumerate(['Average', avg_clsnum, '[' + ", ".join(avg_dist_str) + ']']):
             item = QTableWidgetItem(val)
             self.table.setItem(0, index, item)
 
