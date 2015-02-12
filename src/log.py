@@ -1,11 +1,12 @@
 #from core import Config
 
-class log:
+class Log:
     def __init__(self):
         self.colormaps = []
         self.measures = []
         self.loc = "tmp"
-        self.head = "none"
+        self.colormaps = []
+        self.measures = []
 
         # rand; shared info; homogeneity; completeness; v_measure_score; fitness; [4 rezervirano]
         self.info_cols_len = 10
@@ -15,6 +16,10 @@ class log:
 
 
     def load(self, location = None):
+        self.colormaps = []
+        self.measures = []
+        self.head = ''
+
         self.loc = location or self.loc
         f = open(self.loc, "r")
         self.head = f.readline().strip()
@@ -56,7 +61,7 @@ class log:
         self.measures.append(ms)
 
 def test():
-    l = log()
+    l = Log()
     l.set_info_cols_len(2)
     l.load("proba_csv")
     l.push_colormap([3, 2, 1, 0])

@@ -322,11 +322,11 @@ if __name__ == '__main__':
 
     diffs = []
 
-    preskoci = 20
+    preskoci = 0
 
-    for dts in ['Iris']:
-        for mcl in [10]:
-            for dst in ["Minkowski_2", "Mahalanobis"]: # , "Cosine"
+    for dts in ['Glass']:
+        for mcl in [25]:
+            for dst in ["Minkowski_2"]: # , "Cosine"
                 for fs in [True, False]:
                     for fm in ['db', 'cs']:
                         for t in [1, 2, 4]:
@@ -359,7 +359,7 @@ if __name__ == '__main__':
 
                                 c = Core(Config(confs))
 
-                                logger = log.log()
+                                logger = log.Log()
                                 logger.set_file(fname)
                                 logger.set_header(c.config)
 

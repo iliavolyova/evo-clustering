@@ -134,3 +134,34 @@ class HistoPlot():
         scaledvals = vals + 1
         y = [scaledvals.tolist().count(i) for i in self.bins]
         self.current.setOpts(height=sorted(y, reverse=True))
+
+class DetailsPlot(pg.GraphicsWindow):
+
+    def __init__(self, run):
+        super(DetailsPlot, self).__init__()
+        self.run = run
+        self.setWindowTitle(run['name'])
+        self.resize(800,500)
+        self.draw()
+        self.moveToPosition()
+        self.show()
+
+    def draw(self):
+        data = np.array(self.run['measures'])
+        transposed = np.transpose(data)
+        x = np.linspace(0, len(data), num=len(data))
+        self.details_plot = self.addPlot()
+        self.details_plot.setLabel('bottom', 'generation')
+        self.details_plot.setLabel('left', 'score')
+
+        pens = [(255,0,0), (0,255,0), (0,0,255), (255,0, 255), (255, 255, 0), (0,255,255)]
+        names = ['Rand index adjusted for chance', 'Adjusted Mutual Information',
+                 'Homogeneity metric', 'Completeness metric', 'V-measure cluster labeling', 'Best fitness']
+        self.details_plot.addLegend(offset=(-1,1))
+
+        for i in range(6):
+            self.details_plot.plot(x=x, y=transposed[i], pen=pens[i], name=names[i])
+
+    def moveToPosition (self):
+        resolution = QDesktopWidget().screenGeometry()
+        self.move(resolution.width() - self.frameSize().width(), 0)

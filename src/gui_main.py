@@ -6,6 +6,7 @@ import gui_graphs
 import gui_scatter
 from core import *
 import log
+import stats
 from gui_util import *
 from ui.gui import Ui_MainWindow
 
@@ -31,7 +32,7 @@ class Worker(QtCore.QObject):
     running = False
 
     def work(self):
-        logger = log.log()
+        logger = log.Log()
 
         if self.isLogging:
             root = Tkinter.Tk()
@@ -89,6 +90,8 @@ class MainWindow(QMainWindow):
         self.graphs.w.graphsdying.connect(self.untick_show_graphs)
 
         self.axestable = AxesTable(self, self.ui.table_axes)
+
+        self.stats_tab = stats.Stats(self.ui)
 
         self.ui.button_start.clicked.connect(self.start)
         self.ui.checkBox_plotShowing.stateChanged.connect(self.plot.show)
@@ -160,6 +163,9 @@ class MainWindow(QMainWindow):
         del self.graphs
         for k, v in self.resultPlots.iteritems():
             v.w.close()
+        for k,v in self.stats_tab.plots.iteritems():
+            v.close()
+        del self.stats_tab
         del self.resultPlots
         QCloseEvent.accept()
     
@@ -198,7 +204,6 @@ class MainWindow(QMainWindow):
     def finished_job(self):
         self.worker.running = False
         self.ui.button_start.setText("Start")
-
 
 def main():
     app = QApplication(sys.argv)
