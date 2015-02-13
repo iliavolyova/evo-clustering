@@ -9,6 +9,7 @@ import time
 import log
 from sklearn import metrics
 from sklearn import preprocessing
+from sklearn.cluster import *
 
 from dataset import *
 
@@ -324,10 +325,18 @@ if __name__ == '__main__':
 
     preskoci = 0
 
-    for dts in ['Glass']:
-        for mcl in [25]:
-            for dst in ["Minkowski_2"]: # , "Cosine"
+    for dts in ['Iris', 'Glass', 'Wine']:
+        for mcl in [10]:
+            if dts == 'Iris':
+                mcl = 10
+            elif dts == 'Glass':
+                mcl = 25
+            elif dts == 'Wine':
+                mcl = 10
+            for dst in ["Minkowski_2"]: # , "Cosine", "Mahalanobis"], jer kmeans je za M2, pa da sve isto bude
                 for fs in [True, False]:
+                    if dts == 'Wine' and fs:
+                        continue # nemamo weightove za Wine
                     for fm in ['db', 'cs']:
                         for t in [1, 2, 4]:
                             for q in [1, 2, 4]:
@@ -341,7 +350,7 @@ if __name__ == '__main__':
                                 confs = {
                                         'Dataset' : dts,
                                         'Number of generations' : 30,
-                                        'Population size': 40,
+                                        'Population size': 1,
                                         'Max clusters' : mcl,
                                         'Fitness method': fm,
                                         'q' : q,
@@ -352,35 +361,55 @@ if __name__ == '__main__':
 
                                 print confs
 
-                                fname = "log_acde_" + confs['Dataset'] + "_" + confs['Distance measure'] + \
+                                fname_sfx = confs['Dataset'] + "_" + confs['Distance measure'] + \
                                 ("_Weights_" if confs['Feature significance'] else "_noWeights_") + \
                                 confs['Fitness method'] + \
                                 ('_' + str(confs['q']) + '_' + str(confs['t']) if confs['Fitness method'] == 'db' else "")
 
                                 c = Core(Config(confs))
 
-                                logger = log.Log()
-                                logger.set_file(fname)
-                                logger.set_header(c.config)
+                                for algoritam in ["km", "dbs"]:
+                                    if algoritam == "km":
+                                        fname = "log_kmeans_" + fname_sfx
+                                        km_klas = KMeans(n_clusters = mcl, init = 'random', n_init=1, max_iter = 30)
+                                        km_klas.fit(c.config.dataset.data)
+                                        rez = km_klas.predict(c.config.dataset.data)
+                                    else:
+                                        fname = "log_dbscan_" + fname_sfx
+                                        npa = np.array(c.config.dataset.data) # bug, ne ide bez
+                                        dbs_klas = DBSCAN().fit(npa)
+                                        #dbs_klas.fit(c.config.dataset.data)
+                                        rez = dbs_klas.fit_predict(npa)
 
-                                optklasteri = c.config.dataset.params['ClusterMap']
+                                    max_boja = max(rez)
+                                    vr = set(rez)
+                                    if len(vr) != max_boja + 1:
+                                        offset = 0
+                                        for i in range(max_boja + 1):
+                                            if i in vr:
+                                                rez = [i - offset if rez[j] == i else rez[j] for j in range(len(rez))]
+                                            else:
+                                                offset += 1
 
-                                for i in range(c.config.trajanje_svijeta):
-                                    result = c.cycle()
-                                    logger.push_colormap(result.colormap)
+                                    logger = log.Log()
+                                    logger.set_file(fname)
+                                    logger.set_header(c.config)
+
+                                    optklasteri = c.config.dataset.params['ClusterMap']
+
+                                    logger.push_colormap(rez)
                                     logger.push_measures([
-                                        metrics.adjusted_rand_score(result.colormap, optklasteri),
-                                        metrics.adjusted_mutual_info_score(result.colormap, optklasteri),
-                                        metrics.homogeneity_score(result.colormap, optklasteri),
-                                        metrics.completeness_score(result.colormap, optklasteri),
-                                        metrics.v_measure_score(result.colormap, optklasteri),
-                                        max(result.fitnessmap)
+                                        metrics.adjusted_rand_score(rez, optklasteri),
+                                        metrics.adjusted_mutual_info_score(rez, optklasteri),
+                                        metrics.homogeneity_score(rez, optklasteri),
+                                        metrics.completeness_score(rez, optklasteri),
+                                        metrics.v_measure_score(rez, optklasteri),
+                                        c.config.dataset.getFitnessOf(c.config, rez) if len(vr) > 1 else 0.0001
                                     ])
 
-                                    if (i == c.config.trajanje_svijeta - 1):
-                                        diffs.append((metrics.adjusted_rand_score(result.colormap, optklasteri), confs))
+                                    diffs.append((metrics.adjusted_rand_score(rez, optklasteri), confs))
 
 
-                                logger.flush()
+                                    logger.flush()
     diffs.sort()
     print diffs
