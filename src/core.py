@@ -377,6 +377,7 @@ if __name__ == '__main__':
                                     else:
                                         fname = "log_dbscan_" + fname_sfx
                                         npa = np.array(c.config.dataset.data) # bug, ne ide bez
+                                        print c.config.dataset.data
                                         dbs_klas = DBSCAN().fit(npa)
                                         #dbs_klas.fit(c.config.dataset.data)
                                         rez = dbs_klas.fit_predict(npa)
