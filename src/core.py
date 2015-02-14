@@ -325,9 +325,9 @@ if __name__ == '__main__':
     preskoci = 0
 
     for dts in ['Glass']:
-        for mcl in [25]:
-            for dst in ["Minkowski_2"]: # , "Cosine"
-                for fs in [True, False]:
+        for mcl in [10]:
+            for dst in ["Cosine"]:
+                for fs in [False]:
                     for fm in ['db', 'cs']:
                         for t in [1, 2, 4]:
                             for q in [1, 2, 4]:

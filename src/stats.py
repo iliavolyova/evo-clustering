@@ -115,7 +115,7 @@ class Stats():
                 elif col == 2:
                     item = QTableWidgetItem(str(l_counts))
                 elif col == 3:
-                    item = QTableWidgetItem('%.4f' % conf.dataset.getOptimalFitness(conf))
+                    item = QTableWidgetItem('%.4f' % (1 / conf.dataset.getOptimalFitness(conf)))
                 elif col == 4:
                     item = QTableWidgetItem('%.4f' % run['measures'][-1][5])
                 elif col == 5:
