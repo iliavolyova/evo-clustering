@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'gui.ui'
 #
-# Created: Thu Feb 12 20:35:04 2015
+# Created: Sat Feb 14 22:18:14 2015
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -243,6 +243,7 @@ class Ui_MainWindow(object):
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_current), _translate("MainWindow", "Current Run", None))
         self.label_2.setText(_translate("MainWindow", "Select result group", None))
         self.datasetComboBox.setItemText(0, _translate("MainWindow", "---", None))
+        self.table_results.setSortingEnabled(True)
         item = self.table_results.horizontalHeaderItem(0)
         item.setText(_translate("MainWindow", "Name", None))
         item = self.table_results.horizontalHeaderItem(1)
@@ -252,9 +253,9 @@ class Ui_MainWindow(object):
         item.setText(_translate("MainWindow", "DDist", None))
         item.setToolTip(_translate("MainWindow", "<html><head/><body><p>Detected distribution of classes</p></body></html>", None))
         item = self.table_results.horizontalHeaderItem(3)
-        item.setText(_translate("MainWindow", "OFit", None))
+        item.setText(_translate("MainWindow", "Oindex", None))
         item = self.table_results.horizontalHeaderItem(4)
-        item.setText(_translate("MainWindow", "DFit", None))
+        item.setText(_translate("MainWindow", "Dindex", None))
         item.setToolTip(_translate("MainWindow", "Best detected fitness", None))
         item = self.table_results.horizontalHeaderItem(5)
         item.setText(_translate("MainWindow", "Details", None))

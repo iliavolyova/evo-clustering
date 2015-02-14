@@ -366,6 +366,9 @@
         <height>381</height>
        </rect>
       </property>
+      <property name="sortingEnabled">
+       <bool>true</bool>
+      </property>
       <column>
        <property name="text">
         <string>Name</string>
@@ -389,12 +392,12 @@
       </column>
       <column>
        <property name="text">
-        <string>OFit</string>
+        <string>Oindex</string>
        </property>
       </column>
       <column>
        <property name="text">
-        <string>DFit</string>
+        <string>Dindex</string>
        </property>
        <property name="toolTip">
         <string>Best detected fitness</string>

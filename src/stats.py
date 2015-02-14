@@ -69,6 +69,7 @@ class Stats():
             self.runs.append(run)
 
         params = self.get_params(self.runs[0])
+        params['Feature significance'] = False if params['Distance measure'] is not 'Minkowski2' else params['Feature significance']
         self.window.label_dataset.setText(params['Dataset'])
         opt_config = core.Config(params)
         self.window.label_classes.setText(str(opt_config.dataset.params['Classes']))
@@ -87,7 +88,8 @@ class Stats():
         cls_sum=0
         dist_sum=[]
         dist_cnt=[]
-        for row, run in enumerate(self.runs):
+        runs_by_name = sorted(self.runs, key=lambda run: run['name'])
+        for row, run in enumerate(runs_by_name):
 
             colormap = run['colormaps'][-1]
             l_counts = [colormap.count(x) for x in set(colormap)]
@@ -115,9 +117,9 @@ class Stats():
                 elif col == 2:
                     item = QTableWidgetItem(str(l_counts))
                 elif col == 3:
-                    item = QTableWidgetItem('%.4f' % conf.dataset.getOptimalFitness(conf))
+                    item = QTableWidgetItem('%.4f' % (1 / conf.dataset.getOptimalFitness(conf)))
                 elif col == 4:
-                    item = QTableWidgetItem('%.4f' % run['measures'][-1][5])
+                    item = QTableWidgetItem('%.4f' % (1 / run['measures'][-1][5]))
                 elif col == 5:
                     btn = QPushButton(self.table)
                     btn.setText('Show')
