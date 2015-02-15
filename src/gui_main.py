@@ -2,6 +2,10 @@ from __future__ import division
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
+import numpy as np
+from scipy import spatial
+from sklearn.cluster import *
+
 import gui_graphs
 import gui_scatter
 from core import *
@@ -60,6 +64,44 @@ class Worker(QtCore.QObject):
                         metrics.v_measure_score(result.colormap, optklasteri),
                         max(result.fitnessmap)
                     ])
+            if i == self.core.config.trajanje_svijeta - 1 and self.core.config.fitness_metoda == 'db' and not self.core.config.weights_on and self.isLogging:
+                for algoritam in ["km", "dbs"]:
+                    if algoritam == "km":
+                        km_klas = KMeans(n_clusters = self.core.config.k_max, init = 'random', n_init=self.core.config.velicina_populacije, max_iter = self.core.config.trajanje_svijeta)
+                        km_klas.fit(self.core.config.dataset.data)
+                        rez = km_klas.predict(self.core.config.dataset.data)
+                    else:
+                        npa = np.array(self.core.config.dataset.data) # bug, ne ide bez
+                        dbs_klas = DBSCAN().fit(npa)
+                        rez = dbs_klas.fit_predict(npa)
+
+                    min_boja = min(rez)
+                    rez = [x - min_boja for x in rez]
+
+                    max_boja = max(rez)
+                    vr = set(rez)
+                    if len(vr) != max_boja + 1:
+                        offset = 0
+                        for i in range(max_boja + 1):
+                            if i in vr:
+                                rez = [i - offset if rez[j] == i else rez[j] for j in range(len(rez))]
+                            else:
+                                offset += 1
+
+                    logger.measures[i][6:9] = [0, 0, 0]
+                    if algoritam == 'km':
+                        try:
+                            logger.measures[i][6] = self.core.config.dataset.getFitnessOf(self.core.config, rez) if len(vr) > 1 else 0.0001
+                        except:
+                            pass
+                    else:
+                        try:
+                            logger.measures[i][7] = len(vr)
+                            logger.measures[i][8] = self.core.config.dataset.getFitnessOf(self.core.config, rez) if len(vr) > 1 else 0.0001
+                        except:
+                            pass
+
+
 
         self.update_gencount.emit(self.core.config.trajanje_svijeta)
 

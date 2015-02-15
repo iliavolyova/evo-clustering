@@ -16,7 +16,7 @@ class Dataset(object):
         features = []
         for cols in [raw.strip().split(',') for raw in f]:
             features.append(cols)
-        random.shuffle(features)
+        # random.shuffle(features)
 
         for columns in features:
             if classCol is not None:

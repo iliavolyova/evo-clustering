@@ -1,15 +1,19 @@
 from __future__ import division
 from matplotlib.pyplot import colormaps
 
-import numpy as np
+import textwrap
 import random
 import math
+import os
+
+import numpy as np
 from scipy import spatial
+from sklearn.cluster import *
 import time
 import log
 from sklearn import metrics
 from sklearn import preprocessing
-from sklearn.cluster import *
+
 
 from dataset import *
 
@@ -321,9 +325,159 @@ class Populacija:
 
 if __name__ == '__main__':
 
+    
     diffs = []
 
     preskoci = 0
+
+    resfolder = os.path.join('..', 'res')
+    run_groups = []
+    run_paths = []
+    dbase = []
+    for dirname, dirnames, filenames in os.walk(resfolder):
+        for subdirname in dirnames:
+
+            basepath = os.path.join(resfolder, subdirname)
+            for dirname, dirnames, filenames in os.walk(basepath):
+                for f in filenames:
+                    f = os.path.join(basepath, f)
+                    #if "kmeans" in f or "dbscan" in f or '_Weights' in f:
+                    if '_Weights' in f:
+                        continue
+                    #print f
+                    if "kmeans" in f:
+                        alg = "kmeans"
+                    elif "acde" in f:
+                        alg = "acde"
+                    elif "dbscan" in f:
+                        alg = "dbscan"
+
+                    logger = log.Log()
+                    logger.load(f)
+                    msrs = logger.measures[len(logger.measures) - 1]
+                    info = logger.head_as_array
+
+                    fitm = info[3]
+                    distm = info[4]
+                    q = int(info[5])
+                    t = int(info[6])
+
+                    dbase.append([subdirname, alg, fitm, distm, q, t] + msrs[0:6])
+
+    dbase_wine = filter(lambda x: x[0] == 'Wine', dbase)
+    dbase_iris = filter(lambda x: x[0] == 'Iris', dbase)
+    dbase_glass = filter(lambda x: x[0] == 'Glass_1', dbase)
+    dbases = [dbase_glass, dbase_iris, dbase_wine]
+
+    # koja metrika u prosjeku najbolji score za scores 0 - 4 ?
+    latex_table1_prefix = textwrap.dedent("""\\begin{table}[h]
+        \\begin{tabular}{l|lllll}
+           & Rand & Zajednicka informacija & Homogenost & Potpunost & V-mjera \\\\ \\hline
+        """)
+
+    latex_table1_postfix = textwrap.dedent("""\\end{tabular}
+        \\caption{CAPT}
+        \\label{my-label}
+        \\end{table}
+        """)
+
+    for db in dbases:
+        #print db[0][0], "\n"
+        print latex_table1_prefix
+        reci = [str(br) for br in range(1, 7)]
+        for metric in range(5):
+            db_by_metric = sorted(filter(lambda x: x[1] == 'acde', db),
+                                  lambda x, y: -cmp(x[metric + 6], y[metric + 6])*100)
+            #print metric, db_by_metric
+
+            print 1
+
+            for run in zip(db_by_metric, range(1, 7)):
+                if run[0][3] == 'Cosine':
+                    hrv = "Cos., "
+                elif run[0][3] == 'Minkowski_2':
+                    hrv = "Eukl., "
+                elif run[0][3] == 'Mahalanobis':
+                    hrv = "Mah., "
+                dbcs = (' db(' + str(run[0][4]) + ', ' + str(run[0][5]) +')') if run[0][2] == 'db' else ' cs'
+                reci[run[1] - 1] += " & \\begin{tabular}[c]{@{}l@{}}" + hrv + dbcs + " \\\\" + str(run[0][metric + 6])  + "\\end{tabular}"
+
+        for r in reci:
+            print r, "\\\\\n"
+
+        print latex_table1_postfix.replace('CAPT', db[0][0]), "\n\n"
+
+    exit()
+
+    # ako fiskiramo db/cs, sto je u prosjeku bolje?
+    for db in dbases:
+        print 2, db[0][0]
+        for metr in ['db', 'cs']:
+            filt = filter(lambda x: x[2] == metr, filter(lambda x: x[1] == 'acde', db))
+            filt = [x[6:] for x in filt]
+            filt = [np.array(f) for f in filt] # da mozemo sumirati
+            avg =  sum(filt) / len(filt)
+            print metr, avg
+        print '\n\n'
+
+    # ako fiskiramo metriku i db/cs, sto je u prosjeku bolje?
+    for db in dbases:
+        print 3, db[0][0]
+        for metric in  ["Minkowski_2", "Cosine", "Mahalanobis"]:
+            for metr in ['db', 'cs']:
+                filt = filter(lambda x: x[2] == metr and x[3] == metric, filter(lambda x: x[1] == 'acde', db))
+                filt = [x[6:] for x in filt]
+                filt = [np.array(f) for f in filt] # da mozemo sumirati
+                avg =  sum(filt) / len(filt)
+                print metric, metr, avg
+        print '\n\n'
+
+    for db in dbases:
+        print 4, db[0][0]
+        for metric in  ["Minkowski_2"]: # jer kmeans radi samo s mink
+            for metr in ['db', 'cs']:
+                latex_plot_text = textwrap.dedent("""\
+                    \\begin{tikzpicture}
+                    \\begin{axis}[%
+                    scatter/classes={%
+                        a={mark=square*,blue, mark size=6},%
+                        b={mark=square*,red, mark size=6},%
+                        c={mark=square*,green, mark size=6}}]
+                    \\addplot[scatter,only marks,%
+                        scatter src=explicit symbolic]%
+                    table[meta=label] {
+                    q t label
+                    """)
+
+                for t in [int(x) for x in [1, 2, 4]]:
+                    for q in [int(x) for x in [1, 2, 4]]:
+                        if (q != 1 or t != 1) and metr == 'cs':
+                            continue
+                        # print metric, metr, q, t, '\n'
+                        r_acde = filter(lambda x: x[1] == 'acde' and x[2] == metr and x[3] == metric and x[4] == q and x[5] == t, db)[0]
+                        r_kmeans = filter(lambda x: x[1] == 'kmeans' and x[2] == metr and x[3] == metric and x[4] == q and x[5] == t, db)[0]
+                        r_dbscan = filter(lambda x: x[1] == 'dbscan' and x[2] == metr and x[3] == metric and x[4] == q and x[5] == t, db)[0]
+
+                        #print r_acde[-1:][0], '\n', r_kmeans[-1:][0], '\n', r_dbscan[-1:][0]
+                        z = zip([r_acde[-6:-5][0], r_kmeans[-6:-5][0], r_dbscan[-6:-5][0]], ['a', 'b', 'c'])
+                        #print z
+                        rez = sorted(z, lambda x, y: cmp(y[0], x[0]))
+
+                        latex_plot_text += str(q) + " " + str(t) + " " + rez[0][1] + "\n"
+
+                latex_plot_text += textwrap.dedent("""\
+                    };
+                    \\end{axis}
+                    \\end{tikzpicture}""")
+
+                print "\n" + metr + "\n\n", latex_plot_text + "\n"
+
+
+        print '\n\n'
+
+    #print str(dbase_glass).replace('], [', '\n')
+    exit()
+
 
     for dts in ['Iris', 'Glass', 'Wine']:
         for mcl in [10]:
@@ -366,51 +520,6 @@ if __name__ == '__main__':
                                 confs['Fitness method'] + \
                                 ('_' + str(confs['q']) + '_' + str(confs['t']) if confs['Fitness method'] == 'db' else "")
 
-                                c = Core(Config(confs))
 
-                                for algoritam in ["km", "dbs"]:
-                                    if algoritam == "km":
-                                        fname = "log_kmeans_" + fname_sfx
-                                        km_klas = KMeans(n_clusters = mcl, init = 'random', n_init=1, max_iter = 30)
-                                        km_klas.fit(c.config.dataset.data)
-                                        rez = km_klas.predict(c.config.dataset.data)
-                                    else:
-                                        fname = "log_dbscan_" + fname_sfx
-                                        npa = np.array(c.config.dataset.data) # bug, ne ide bez
-                                        print c.config.dataset.data
-                                        dbs_klas = DBSCAN().fit(npa)
-                                        #dbs_klas.fit(c.config.dataset.data)
-                                        rez = dbs_klas.fit_predict(npa)
-
-                                    max_boja = max(rez)
-                                    vr = set(rez)
-                                    if len(vr) != max_boja + 1:
-                                        offset = 0
-                                        for i in range(max_boja + 1):
-                                            if i in vr:
-                                                rez = [i - offset if rez[j] == i else rez[j] for j in range(len(rez))]
-                                            else:
-                                                offset += 1
-
-                                    logger = log.Log()
-                                    logger.set_file(fname)
-                                    logger.set_header(c.config)
-
-                                    optklasteri = c.config.dataset.params['ClusterMap']
-
-                                    logger.push_colormap(rez)
-                                    logger.push_measures([
-                                        metrics.adjusted_rand_score(rez, optklasteri),
-                                        metrics.adjusted_mutual_info_score(rez, optklasteri),
-                                        metrics.homogeneity_score(rez, optklasteri),
-                                        metrics.completeness_score(rez, optklasteri),
-                                        metrics.v_measure_score(rez, optklasteri),
-                                        c.config.dataset.getFitnessOf(c.config, rez) if len(vr) > 1 else 0.0001
-                                    ])
-
-                                    diffs.append((metrics.adjusted_rand_score(rez, optklasteri), confs))
-
-
-                                    logger.flush()
     diffs.sort()
     print diffs
